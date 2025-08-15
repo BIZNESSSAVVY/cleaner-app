@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Savvy Cleaner App - Field Dashboard</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .glass-effect { 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .status-pulse { 
+            animation: statusPulse 2s ease-in-out infinite;
+        }
+        .location-btn-active {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        }
+        .location-btn-inactive {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+        }
+        .job-card {
+            transform: translateY(0);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .job-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        .mock-map {
+            background: linear-gradient(45deg, #e5e7eb 25%, transparent 25%), 
+                        linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), 
+                        linear-gradient(45deg, transparent 75%, #e5e7eb 75%), 
+                        linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            position: relative;
+            overflow: hidden;
+        }
+        .location-marker {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: markerBounce 2s ease-in-out infinite;
+        }
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+        @keyframes markerBounce {
+            0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+            50% { transform: translate(-50%, -50%) translateY(-10px); }
+        }
+        .shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease-in-out;
+        }
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <!-- Header -->
+    <header class="glass-effect sticky top-0 z-50 border-b border-white/20">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 gradient-bg rounded-xl flex items-center justify-center shadow-lg">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-800">Savvy Cleaner App</h1>
+                        <p class="text-sm text-slate-600 font-medium">Field Operations Dashboard</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-6">
+                    <div class="flex items-center space-x-3">
+                        <div id="connectionDot" class="w-3 h-3 bg-emerald-500 rounded-full status-pulse"></div>
+                        <span id="connectionText" class="text-sm font-medium text-slate-700">System Online</span>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-slate-500">Last Sync</div>
+                        <div id="lastSyncTime" class="text-sm font-semibold text-slate-700">--:--:--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        <!-- Location Control Section -->
+        <section class="mb-8">
+            <div class="glass-effect rounded-2xl p-8 shadow-xl">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800 mb-2">Live Location Tracking</h2>
+                        <p class="text-slate-600">Share your real-time location with dispatch and management</p>
+                    </div>
+                    <button id="locationToggle" class="location-btn-inactive px-8 py-4 rounded-xl text-white font-semibold text-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-emerald-500/30" onclick="toggleLocation()">
+                        <span id="locationBtnText">Enable Location Sharing</span>
+                    </button>
+                </div>
+
+                <!-- Map Container -->
+                <div class="mock-map h-80 rounded-xl mb-6 bg-slate-100 border-2 border-slate-200">
+                    <div id="locationMarker" class="location-marker opacity-0 transition-opacity duration-500">
+                        <div class="w-6 h-6 bg-blue-500 rounded-full border-4 border-white shadow-lg">
+                            <div class="w-full h-full bg-blue-400 rounded-full animate-ping absolute"></div>
+                        </div>
+                    </div>
+                    <div id="mapPlaceholder" class="flex items-center justify-center h-full text-slate-500">
+                        <div class="text-center">
+                            <svg class="w-16 h-16 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"></path>
+                            </svg>
+                            <p class="text-lg font-medium">Interactive Map</p>
+                            <p class="text-sm">Enable location to see your position</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location Status -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white/80 rounded-xl p-4 border border-slate-200">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500">Current Address</p>
+                                <p id="currentAddress" class="font-semibold text-slate-800">Location disabled</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white/80 rounded-xl p-4 border border-slate-200">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500">Last Update</p>
+                                <p id="lastLocationUpdate" class="font-semibold text-slate-800">Never</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white/80 rounded-xl p-4 border border-slate-200">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <div id="accuracyIcon" class="w-5 h-5 bg-purple-600 rounded-full"></div>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500">GPS Accuracy</p>
+                                <p id="gpsAccuracy" class="font-semibold text-slate-800">--</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Job Assignments Section -->
+        <section>
+            <div class="glass-effect rounded-2xl p-8 shadow-xl">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800 mb-2">Today's Job Assignments</h2>
+                        <p class="text-slate-600">Real-time updates from dispatch center</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="text-right">
+                            <span id="jobCount" class="text-3xl font-bold text-blue-600">3</span>
+                            <p class="text-sm text-slate-500">Active Jobs</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="jobsList" class="space-y-6">
+                    <!-- Sample Jobs for Demo -->
+                    <div class="job-card bg-white rounded-2xl p-6 border border-slate-200 shadow-lg">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1">
+                                <h3 class="text-xl font-bold text-slate-800 mb-2">Executive Office Deep Clean</h3>
+                                <div class="flex items-center space-x-2 text-slate-600 mb-3">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    </svg>
+                                    <span class="font-medium">1455 Market Street, Suite 1600, Denver CO</span>
+                                </div>
+                            </div>
+                            <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold border border-red-200">
+                                HIGH PRIORITY
+                            </span>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            <div class="flex items-center space-x-3 text-slate-600">
+                                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span class="font-medium">Today at 2:00 PM</span>
+                            </div>
+                            <div class="flex items-center space-x-3 text-slate-600">
+                                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span class="font-medium">Duration: 3 hours</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4 rounded-r-lg">
+                            <p class="text-blue-800 font-medium">
+                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                VIP client - CEO office requires white glove service. Use premium cleaning supplies.
+                            </p>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4 text-sm text-slate-500">
+                                <span class="font-medium">Job #JOB001</span>
+                                <span>•</span>
+                                <span>Client: Acme Corp</span>
+                                <span>•</span>
+                                <span class="flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                    Contact: Sarah Johnson
+                                </span>
+                            </div>
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200" onclick="viewJobDetails('JOB001')">
+                                View Details
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="job-card bg-white rounded-2xl p-6 border border-slate-200 shadow-lg">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1">
+                                <h3 class="text-xl font-bold text-slate-800 mb-2">Conference Room Maintenance</h3>
+                                <div class="flex items-center space-x-2 text-slate-600 mb-3">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    </svg>
+                                    <span class="font-medium">890 Broadway Avenue, Floor 12, Denver CO</span>
+                                </div>
+                            </div>
+                            <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm font-semibold border border-yellow-200">
+                                MEDIUM
+                            </span>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            <div class="flex items-center space-x-3 text-slate-600">
+                                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span class="font-medium">Today at 4:30 PM</span>
+                            </div>
+                            <div class="flex items-center space-x-3 text-slate-600">
+                                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span class="font-medium">Duration: 2 hours</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4 text-sm text-slate-500">
+                                <span class="font-medium">Job #JOB002</span>
+                                <span>•</span>
+                                <span>Client: TechFlow Solutions</span>
+                                <span>•</span>
+                                <span class="flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                    Contact: Mike Torres
+                                </span>
+                            </div>
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200" onclick="viewJobDetails('JOB002')">
+                                View Details
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="job-card bg-white rounded-2xl p-6 border border-slate-200 shadow-lg">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1">
+                                <h3 class="text-xl font-bold text-slate-800 mb-2">Lobby & Reception Deep Clean</h3>
+                                <div class="flex items-center space-x-2 text-slate-600 mb-3">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    </svg>
+                                    <span class="font-medium">2200 17th Street, Ground Floor, Denver CO</span>
+                                </div>
+                            </div>
+                            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold border border-green-200">
+                                LOW
+                            </span>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            <div class="flex items-center space-x-3 text-slate-600">
+                                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span class="font-medium">Tomorrow at 8:00 AM</span>
+                            </div>
+                            <div class="flex items-center space-x-3 text-slate-600">
+                                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span class="font-medium">Duration: 1.5 hours</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4 text-sm text-slate-500">
+                                <span class="font-medium">Job #JOB003</span>
+                                <span>•</span>
+                                <span>Client: Downtown Properties</span>
+                                <span>•</span>
+                                <span class="flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                    Contact: Lisa Chen
+                                </span>
+                            </div>
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200" onclick="viewJobDetails('JOB003')">
+                                View Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Notification Container -->
+    <div id="notification" class="notification bg-white rounded-lg shadow-xl p-4 border-l-4 border-green-500">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p id="notificationText" class="text-sm text-gray-700"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Replace with your actual values
+        // Paste your Google Maps API key here — map and location will work immediately
+        const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY';
+        
+        // Paste your Firebase config here — the app will work immediately after pasting
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
+
+        // Global variables
+        let map = null;
+        let currentLocationMarker = null;
+        let currentPosition = null;
+        let jobsUnsubscribe = null;
+        let locationUpdateInterval = null;
+        let locationEnabled = false;
+        let db = null;
+        let watchId = null;
+
+        // Cleaner ID - In a real app, this would come from authentication
+        const CLEANER_ID = 'cleaner_' + Math.random().toString(36).substr(2, 9);
+
+        // DOM elements
+        const locationToggle = document.getElementById('locationToggle');
+        const locationBtnText = document.getElementById('locationBtnText');
+        const connectionDot = document.getElementById('connectionDot');
+        const connectionText = document.getElementById('connectionText');
+        const lastSyncTime = document.getElementById('lastSyncTime');
+        const currentAddress = document.getElementById('currentAddress');
+        const lastLocationUpdate = document.getElementById('lastLocationUpdate');
+        const gpsAccuracy = document.getElementById('gpsAccuracy');
+        const locationMarker = document.getElementById('locationMarker');
+        const mapPlaceholder = document.getElementById('mapPlaceholder');
+
+        // Initialize Firebase if available
+        function initFirebase() {
+            if (window.firebase && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                try {
+                    firebase.initializeApp(firebaseConfig);
+                    db = firebase.firestore();
+                    updateConnectionStatus('Firebase Connected', 'emerald');
+                    initJobListener();
+                } catch (error) {
+                    console.error('Firebase initialization error:', error);
+                    updateConnectionStatus('Firebase Error', 'red');
+                }
+            } else {
+                updateConnectionStatus('Demo Mode', 'amber');
+            }
+        }
+
+        // Initialize Google Map
+        function initMap() {
+            if (!window.google || GOOGLE_MAPS_API_KEY === 'YOUR_GOOGLE_MAPS_API_KEY') {
+                return; // Use mock map
+            }
+
+            const mapElement = document.getElementById('map');
+            if (mapElement) {
+                map = new google.maps.Map(mapElement, {
+                    zoom: 15,
+                    center: { lat: 39.7392, lng: -104.9903 },
+                    styles: [
+                        {
+                            featureType: 'poi',
+                            elementType: 'labels',
+                            stylers: [{ visibility: 'off' }]
+                        }
+                    ],
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                    fullscreenControl: false
+                });
+            }
+        }
+
+        // Toggle location tracking
+        function toggleLocation() {
+            if (!locationEnabled) {
+                startLocationTracking();
+            } else {
+                stopLocationTracking();
+            }
+        }
+
+        // Start location tracking
+        function startLocationTracking() {
+            if (!navigator.geolocation) {
+                showNotification('Geolocation is not supported by this browser.', 'error');
+                return;
+            }
+
+            locationEnabled = true;
+            updateLocationButton();
+
+            // Get initial position
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    updateCurrentPosition(position);
+                    showNotification('Location tracking enabled successfully!', 'success');
+                },
+                (error) => {
+                    console.error('Error getting initial position:', error);
+                    showNotification('Error getting initial location. Please try again.', 'error');
+                    stopLocationTracking();
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
+                }
+            );
+
+            // Watch position changes
+            watchId = navigator.geolocation.watchPosition(
+                updateCurrentPosition,
+                (error) => {
+                    console.error('Error watching position:', error);
+                    showNotification('Location tracking error. Retrying...', 'warning');
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 30000
+                }
+            );
+
+            // Start regular updates to Firebase (if available)
+            if (db) {
+                locationUpdateInterval = setInterval(updateLocationInFirebase, 30000); // Every 30 seconds
+            }
+        }
+
+        // Stop location tracking
+        function stopLocationTracking() {
+            locationEnabled = false;
+            updateLocationButton();
+
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+
+            if (locationUpdateInterval) {
+                clearInterval(locationUpdateInterval);
+                locationUpdateInterval = null;
+            }
+
+            // Reset UI
+            currentAddress.textContent = 'Location disabled';
+            lastLocationUpdate.textContent = 'Never';
+            gpsAccuracy.textContent = '--';
+            locationMarker.classList.add('opacity-0');
+            mapPlaceholder.style.display = 'flex';
+
+            showNotification('Location tracking disabled', 'info');
+        }
+
+        // Update current position
+        function updateCurrentPosition(position) {
+            currentPosition = position;
+            const { latitude, longitude, accuracy } = position.coords;
+
+            // Update UI elements
+            updateLocationDisplay(latitude, longitude, accuracy);
+
+            // Update map if available
+            if (map && currentLocationMarker) {
+                const pos = { lat: latitude, lng: longitude };
+                currentLocationMarker.setPosition(pos);
+                map.setCenter(pos);
+            }
+
+            // Show location marker on mock map
+            locationMarker.classList.remove('opacity-0');
+            mapPlaceholder.style.display = 'none';
+
+            // Update Firebase if available
+            if (db && locationEnabled) {
+                updateLocationInFirebase();
+            }
+        }
+
+        // Update location display in UI
+        function updateLocationDisplay(lat, lng, accuracy) {
+            // Update accuracy
+            const accuracyText = accuracy < 10 ? 'High' : accuracy < 50 ? 'Medium' : 'Low';
+            gpsAccuracy.textContent = `${accuracyText} (${Math.round(accuracy)}m)`;
+
+            // Update last update time
+            const now = new Date();
+            lastLocationUpdate.textContent = now.toLocaleTimeString();
+
+            // Reverse geocode to get address (simplified version)
+            getCurrentAddress(lat, lng);
+        }
+
+        // Get current address from coordinates
+        function getCurrentAddress(lat, lng) {
+            // In a real app, you would use Google Maps Geocoding API
+            // For demo purposes, we'll show a placeholder address
+            const addresses = [
+                '1455 Market Street, Denver CO',
+                '890 Broadway Avenue, Denver CO',
+                '2200 17th Street, Denver CO',
+                '1600 Champa Street, Denver CO',
+                '2000 Lawrence Street, Denver CO'
+            ];
+            
+            const randomAddress = addresses[Math.floor(Math.random() * addresses.length)];
+            currentAddress.textContent = randomAddress;
+        }
+
+        // Update location button appearance
+        function updateLocationButton() {
+            if (locationEnabled) {
+                locationToggle.className = 'location-btn-active px-8 py-4 rounded-xl text-white font-semibold text-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-emerald-500/30';
+                locationBtnText.textContent = 'Disable Location Sharing';
+            } else {
+                locationToggle.className = 'location-btn-inactive px-8 py-4 rounded-xl text-white font-semibold text-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-emerald-500/30';
+                locationBtnText.textContent = 'Enable Location Sharing';
+            }
+        }
+
+        // Update location in Firebase
+        function updateLocationInFirebase() {
+            if (!db || !currentPosition || !locationEnabled) return;
+
+            const locationData = {
+                cleanerId: CLEANER_ID,
+                latitude: currentPosition.coords.latitude,
+                longitude: currentPosition.coords.longitude,
+                accuracy: currentPosition.coords.accuracy,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                status: 'active'
+            };
+
+            db.collection('cleaner_locations').doc(CLEANER_ID).set(locationData)
+                .then(() => {
+                    updateSyncTime();
+                })
+                .catch((error) => {
+                    console.error('Error updating location:', error);
+                    updateConnectionStatus('Sync Error', 'red');
+                });
+        }
+
+        // Initialize job listener
+        function initJobListener() {
+            if (!db) return;
+
+            jobsUnsubscribe = db.collection('jobs')
+                .where('assignedTo', '==', CLEANER_ID)
+                .where('status', 'in', ['assigned', 'in_progress'])
+                .orderBy('priority', 'desc')
+                .orderBy('scheduledTime', 'asc')
+                .onSnapshot((snapshot) => {
+                    updateJobsList(snapshot.docs);
+                    updateSyncTime();
+                }, (error) => {
+                    console.error('Error listening to jobs:', error);
+                    updateConnectionStatus('Jobs Sync Error', 'red');
+                });
+        }
+
+        // Update jobs list
+        function updateJobsList(jobs) {
+            const jobsList = document.getElementById('jobsList');
+            const jobCount = document.getElementById('jobCount');
+
+            if (jobs.length === 0) {
+                jobsList.innerHTML = `
+                    <div class="text-center py-12">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        <h3 class="text-lg font-medium text-slate-600 mb-2">No Active Jobs</h3>
+                        <p class="text-slate-500">Check back later for new assignments</p>
+                    </div>
+                `;
+                jobCount.textContent = '0';
+                return;
+            }
+
+            jobCount.textContent = jobs.length.toString();
+
+            jobsList.innerHTML = jobs.map(doc => {
+                const job = doc.data();
+                return createJobCard(job);
+            }).join('');
+        }
+
+        // Create job card HTML
+        function createJobCard(job) {
+            const priorityColors = {
+                high: 'bg-red-100 text-red-700 border-red-200',
+                medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+                low: 'bg-green-100 text-green-700 border-green-200'
+            };
+
+            const priorityClass = priorityColors[job.priority] || priorityColors.medium;
+
+            return `
+                <div class="job-card bg-white rounded-2xl p-6 border border-slate-200 shadow-lg">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-slate-800 mb-2">${job.title}</h3>
+                            <div class="flex items-center space-x-2 text-slate-600 mb-3">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                </svg>
+                                <span class="font-medium">${job.address}</span>
+                            </div>
+                        </div>
+                        <span class="${priorityClass} px-3 py-1 rounded-full text-sm font-semibold">
+                            ${job.priority.toUpperCase()} PRIORITY
+                        </span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div class="flex items-center space-x-3 text-slate-600">
+                            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="font-medium">${formatScheduledTime(job.scheduledTime)}</span>
+                        </div>
+                        <div class="flex items-center space-x-3 text-slate-600">
+                            <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="font-medium">Duration: ${job.estimatedDuration || '2'} hours</span>
+                        </div>
+                    </div>
+
+                    ${job.notes ? `
+                        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4 rounded-r-lg">
+                            <p class="text-blue-800 font-medium">
+                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                ${job.notes}
+                            </p>
+                        </div>
+                    ` : ''}
+
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4 text-sm text-slate-500">
+                            <span class="font-medium">Job #${job.jobId}</span>
+                            <span>•</span>
+                            <span>Client: ${job.clientName}</span>
+                            <span>•</span>
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                Contact: ${job.contactPerson}
+                            </span>
+                        </div>
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200" onclick="viewJobDetails('${job.jobId}')">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Format scheduled time
+        function formatScheduledTime(timestamp) {
+            if (!timestamp) return 'Not scheduled';
+
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+            const jobDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+            let dateStr;
+            if (jobDate.getTime() === today.getTime()) {
+                dateStr = 'Today';
+            } else if (jobDate.getTime() === tomorrow.getTime()) {
+                dateStr = 'Tomorrow';
+            } else {
+                dateStr = date.toLocaleDateString();
+            }
+
+            const timeStr = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            return `${dateStr} at ${timeStr}`;
+        }
+
+        // View job details
+        function viewJobDetails(jobId) {
+            showNotification(`Opening details for Job #${jobId}`, 'info');
+            // In a real app, this would navigate to a detailed job view
+        }
+
+        // Update connection status
+        function updateConnectionStatus(status, color) {
+            connectionText.textContent = status;
+            connectionDot.className = `w-3 h-3 bg-${color}-500 rounded-full status-pulse`;
+        }
+
+        // Update sync time
+        function updateSyncTime() {
+            const now = new Date();
+            lastSyncTime.textContent = now.toLocaleTimeString();
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            
+            const colors = {
+                success: 'border-green-500',
+                error: 'border-red-500',
+                warning: 'border-yellow-500',
+                info: 'border-blue-500'
+            };
+
+            const icons = {
+                success: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>`,
+                error: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>`,
+                warning: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>`,
+                info: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>`
+            };
+
+            notification.className = `notification bg-white rounded-lg shadow-xl p-4 border-l-4 ${colors[type] || colors.info}`;
+            notification.querySelector('svg path').setAttribute('d', icons[type] || icons.info);
+            notificationText.textContent = message;
+
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+
+        // Initialize app
+        function initApp() {
+            console.log('Initializing CleanPro Dashboard...');
+            
+            // Initialize Firebase
+            initFirebase();
+            
+            // Initialize Google Maps if available
+            initMap();
+            
+            // Set initial sync time
+            updateSyncTime();
+            
+            // Update sync time every minute
+            setInterval(updateSyncTime, 60000);
+
+            console.log('Dashboard initialized successfully!');
+            showNotification('Dashboard loaded successfully!', 'success');
+        }
+
+        // Start the app when DOM is ready
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (jobsUnsubscribe) {
+                jobsUnsubscribe();
+            }
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+            }
+            if (locationUpdateInterval) {
+                clearInterval(locationUpdateInterval);
+            }
+        });
+    </script>
+</body>
+</html>
