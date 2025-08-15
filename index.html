@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Savvy Cleaner App - Field Dashboard</title>
+    <title>Savvy OS - Cleaner Dashboard</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -90,13 +90,54 @@
             opacity: 1;
             transform: translateX(0);
         }
+        /* Responsive Adjustments */
+        @media (max-width: 640px) {
+            .mock-map {
+                height: 60vw;
+            }
+            .notification {
+                top: 20px;
+                right: 10px;
+                width: 90%;
+                max-width: 300px;
+            }
+            .job-card {
+                padding: 1rem;
+            }
+            .job-card h3 {
+                font-size: 1.125rem;
+            }
+            #locationToggle {
+                padding: 0.75rem 1.5rem;
+                font-size: 0.875rem;
+            }
+            header .flex {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            .text-2xl {
+                font-size: 1.5rem;
+            }
+            .text-sm {
+                font-size: 0.75rem;
+            }
+        }
+        @media (min-width: 641px) and (max-width: 768px) {
+            .mock-map {
+                height: 50vw;
+            }
+            .job-card {
+                padding: 1.25rem;
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
     <!-- Header -->
     <header class="glass-effect sticky top-0 z-50 border-b border-white/20">
-        <div class="max-w-7xl mx-auto px-6 py-4">
-            <div class="flex items-center justify-between">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+            <div class="flex items-center justify-between flex-wrap">
                 <div class="flex items-center space-x-4">
                     <div class="w-12 h-12 gradient-bg rounded-xl flex items-center justify-center shadow-lg">
                         <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,12 +145,12 @@
                         </svg>
                     </div>
                     <div>
-                        <h1 class="text-2xl font-bold text-slate-800">Savvy Cleaner App</h1>
-                        <p class="text-sm text-slate-600 font-medium">Field Operations Dashboard</p>
+                        <h1 class="text-2xl sm:text-2xl font-bold text-slate-800">Savvy Cleaner App</h1>
+                        <p class="text-sm sm:text-sm text-slate-600 font-medium">Field Operations Dashboard</p>
                     </div>
                 </div>
                 
-                <div class="flex items-center space-x-6">
+                <div class="flex items-center space-x-4 sm:space-x-6 mt-4 sm:mt-0">
                     <div class="flex items-center space-x-3">
                         <div id="connectionDot" class="w-3 h-3 bg-emerald-500 rounded-full status-pulse"></div>
                         <span id="connectionText" class="text-sm font-medium text-slate-700">System Online</span>
@@ -123,22 +164,22 @@
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-6 py-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <!-- Location Control Section -->
-        <section class="mb-8">
-            <div class="glass-effect rounded-2xl p-8 shadow-xl">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-800 mb-2">Live Location Tracking</h2>
-                        <p class="text-slate-600">Share your real-time location with dispatch and management</p>
+        <section class="mb-6 sm:mb-8">
+            <div class="glass-effect rounded-2xl p-4 sm:p-8 shadow-xl">
+                <div class="flex items-center justify-between mb-4 sm:mb-6 flex-col sm:flex-row">
+                    <div class="mb-4 sm:mb-0">
+                        <h2 class="text-xl sm:text-2xl font-bold text-slate-800 mb-2">Live Location Tracking</h2>
+                        <p class="text-slate-600 text-sm sm:text-base">Share your real-time location with dispatch and management</p>
                     </div>
-                    <button id="locationToggle" class="location-btn-inactive px-8 py-4 rounded-xl text-white font-semibold text-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-emerald-500/30" onclick="toggleLocation()">
+                    <button id="locationToggle" class="location-btn-inactive px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-white font-semibold text-base sm:text-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-emerald-500/30" onclick="toggleLocation()">
                         <span id="locationBtnText">Enable Location Sharing</span>
                     </button>
                 </div>
 
                 <!-- Map Container -->
-                <div class="mock-map h-80 rounded-xl mb-6 bg-slate-100 border-2 border-slate-200">
+                <div class="mock-map h-80 sm:h-80 rounded-xl mb-4 sm:mb-6 bg-slate-100 border-2 border-slate-200">
                     <div id="locationMarker" class="location-marker opacity-0 transition-opacity duration-500">
                         <div class="w-6 h-6 bg-blue-500 rounded-full border-4 border-white shadow-lg">
                             <div class="w-full h-full bg-blue-400 rounded-full animate-ping absolute"></div>
@@ -146,17 +187,17 @@
                     </div>
                     <div id="mapPlaceholder" class="flex items-center justify-center h-full text-slate-500">
                         <div class="text-center">
-                            <svg class="w-16 h-16 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"></path>
                             </svg>
-                            <p class="text-lg font-medium">Interactive Map</p>
-                            <p class="text-sm">Enable location to see your position</p>
+                            <p class="text-base sm:text-lg font-medium">Interactive Map</p>
+                            <p class="text-xs sm:text-sm">Enable location to see your position</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Location Status -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                     <div class="bg-white/80 rounded-xl p-4 border border-slate-200">
                         <div class="flex items-center space-x-3">
                             <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -165,8 +206,8 @@
                                 </svg>
                             </div>
                             <div>
-                                <p class="text-sm text-slate-500">Current Address</p>
-                                <p id="currentAddress" class="font-semibold text-slate-800">Location disabled</p>
+                                <p class="text-xs sm:text-sm text-slate-500">Current Address</p>
+                                <p id="currentAddress" class="font-semibold text-slate-800 text-sm sm:text-base">Location disabled</p>
                             </div>
                         </div>
                     </div>
@@ -179,8 +220,8 @@
                                 </svg>
                             </div>
                             <div>
-                                <p class="text-sm text-slate-500">Last Update</p>
-                                <p id="lastLocationUpdate" class="font-semibold text-slate-800">Never</p>
+                                <p class="text-xs sm:text-sm text-slate-500">Last Update</p>
+                                <p id="lastLocationUpdate" class="font-semibold text-slate-800 text-sm sm:text-base">Never</p>
                             </div>
                         </div>
                     </div>
@@ -191,8 +232,8 @@
                                 <div id="accuracyIcon" class="w-5 h-5 bg-purple-600 rounded-full"></div>
                             </div>
                             <div>
-                                <p class="text-sm text-slate-500">GPS Accuracy</p>
-                                <p id="gpsAccuracy" class="font-semibold text-slate-800">--</p>
+                                <p class="text-xs sm:text-sm text-slate-500">GPS Accuracy</p>
+                                <p id="gpsAccuracy" class="font-semibold text-slate-800 text-sm sm:text-base">--</p>
                             </div>
                         </div>
                     </div>
@@ -202,16 +243,16 @@
 
         <!-- Job Assignments Section -->
         <section>
-            <div class="glass-effect rounded-2xl p-8 shadow-xl">
-                <div class="flex items-center justify-between mb-8">
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-800 mb-2">Today's Job Assignments</h2>
-                        <p class="text-slate-600">Real-time updates from dispatch center</p>
+            <div class="glass-effect rounded-2xl p-4 sm:p-8 shadow-xl">
+                <div class="flex items-center justify-between mb-6 sm:mb-8 flex-col sm:flex-row">
+                    <div class="mb-4 sm:mb-0">
+                        <h2 class="text-xl sm:text-2xl font-bold text-slate-800 mb-2">Today's Job Assignments</h2>
+                        <p class="text-slate-600 text-sm sm:text-base">Real-time updates from dispatch center</p>
                     </div>
                     <div class="flex items-center space-x-4">
                         <div class="text-right">
-                            <span id="jobCount" class="text-3xl font-bold text-blue-600">3</span>
-                            <p class="text-sm text-slate-500">Active Jobs</p>
+                            <span id="jobCount" class="text-2xl sm:text-3xl font-bold text-blue-600">3</span>
+                            <p class="text-xs sm:text-sm text-slate-500">Active Jobs</p>
                         </div>
                         <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                             <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -223,18 +264,18 @@
 
                 <div id="jobsList" class="space-y-6">
                     <!-- Sample Jobs for Demo -->
-                    <div class="job-card bg-white rounded-2xl p-6 border border-slate-200 shadow-lg">
-                        <div class="flex items-start justify-between mb-4">
+                    <div class="job-card bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-lg">
+                        <div class="flex items-start justify-between mb-4 flex-col sm:flex-row">
                             <div class="flex-1">
-                                <h3 class="text-xl font-bold text-slate-800 mb-2">Executive Office Deep Clean</h3>
+                                <h3 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">Executive Office Deep Clean</h3>
                                 <div class="flex items-center space-x-2 text-slate-600 mb-3">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                     </svg>
-                                    <span class="font-medium">1455 Market Street, Suite 1600, Denver CO</span>
+                                    <span class="font-medium text-sm sm:text-base">1455 Market Street, Suite 1600, Denver CO</span>
                                 </div>
                             </div>
-                            <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold border border-red-200">
+                            <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold border border-red-200 mt-2 sm:mt-0">
                                 HIGH PRIORITY
                             </span>
                         </div>
@@ -244,18 +285,18 @@
                                 <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                <span class="font-medium">Today at 2:00 PM</span>
+                                <span class="font-medium text-sm sm:text-base">Today at 2:00 PM</span>
                             </div>
                             <div class="flex items-center space-x-3 text-slate-600">
                                 <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                <span class="font-medium">Duration: 3 hours</span>
+                                <span class="font-medium text-sm sm:text-base">Duration: 3 hours</span>
                             </div>
                         </div>
 
                         <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4 rounded-r-lg">
-                            <p class="text-blue-800 font-medium">
+                            <p class="text-blue-800 font-medium text-sm sm:text-base">
                                 <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
@@ -263,8 +304,8 @@
                             </p>
                         </div>
 
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-4 text-sm text-slate-500">
+                        <div class="flex items-center justify-between flex-col sm:flex-row">
+                            <div class="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm text-slate-500 mb-4 sm:mb-0">
                                 <span class="font-medium">Job #JOB001</span>
                                 <span>•</span>
                                 <span>Client: Acme Corp</span>
@@ -276,24 +317,24 @@
                                     Contact: Sarah Johnson
                                 </span>
                             </div>
-                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200" onclick="viewJobDetails('JOB001')">
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors duration-200" onclick="viewJobDetails('JOB001')">
                                 View Details
                             </button>
                         </div>
                     </div>
 
-                    <div class="job-card bg-white rounded-2xl p-6 border border-slate-200 shadow-lg">
-                        <div class="flex items-start justify-between mb-4">
+                    <div class="job-card bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-lg">
+                        <div class="flex items-start justify-between mb-4 flex-col sm:flex-row">
                             <div class="flex-1">
-                                <h3 class="text-xl font-bold text-slate-800 mb-2">Conference Room Maintenance</h3>
+                                <h3 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">Conference Room Maintenance</h3>
                                 <div class="flex items-center space-x-2 text-slate-600 mb-3">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                     </svg>
-                                    <span class="font-medium">890 Broadway Avenue, Floor 12, Denver CO</span>
+                                    <span class="font-medium text-sm sm:text-base">890 Broadway Avenue, Floor 12, Denver CO</span>
                                 </div>
                             </div>
-                            <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm font-semibold border border-yellow-200">
+                            <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold border border-yellow-200 mt-2 sm:mt-0">
                                 MEDIUM
                             </span>
                         </div>
@@ -303,18 +344,18 @@
                                 <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                <span class="font-medium">Today at 4:30 PM</span>
+                                <span class="font-medium text-sm sm:text-base">Today at 4:30 PM</span>
                             </div>
                             <div class="flex items-center space-x-3 text-slate-600">
                                 <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                <span class="font-medium">Duration: 2 hours</span>
+                                <span class="font-medium text-sm sm:text-base">Duration: 2 hours</span>
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-4 text-sm text-slate-500">
+                        <div class="flex items-center justify-between flex-col sm:flex-row">
+                            <div class="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm text-slate-500 mb-4 sm:mb-0">
                                 <span class="font-medium">Job #JOB002</span>
                                 <span>•</span>
                                 <span>Client: TechFlow Solutions</span>
@@ -326,24 +367,24 @@
                                     Contact: Mike Torres
                                 </span>
                             </div>
-                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200" onclick="viewJobDetails('JOB002')">
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors duration-200" onclick="viewJobDetails('JOB002')">
                                 View Details
                             </button>
                         </div>
                     </div>
 
-                    <div class="job-card bg-white rounded-2xl p-6 border border-slate-200 shadow-lg">
-                        <div class="flex items-start justify-between mb-4">
+                    <div class="job-card bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-lg">
+                        <div class="flex items-start justify-between mb-4 flex-col sm:flex-row">
                             <div class="flex-1">
-                                <h3 class="text-xl font-bold text-slate-800 mb-2">Lobby & Reception Deep Clean</h3>
+                                <h3 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">Lobby & Reception Deep Clean</h3>
                                 <div class="flex items-center space-x-2 text-slate-600 mb-3">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                     </svg>
-                                    <span class="font-medium">2200 17th Street, Ground Floor, Denver CO</span>
+                                    <span class="font-medium text-sm sm:text-base">2200 17th Street, Ground Floor, Denver CO</span>
                                 </div>
                             </div>
-                            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold border border-green-200">
+                            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold border border-green-200 mt-2 sm:mt-0">
                                 LOW
                             </span>
                         </div>
@@ -353,18 +394,18 @@
                                 <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                <span class="font-medium">Tomorrow at 8:00 AM</span>
+                                <span class="font-medium text-sm sm:text-base">Tomorrow at 8:00 AM</span>
                             </div>
                             <div class="flex items-center space-x-3 text-slate-600">
                                 <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                <span class="font-medium">Duration: 1.5 hours</span>
+                                <span class="font-medium text-sm sm:text-base">Duration: 1.5 hours</span>
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-4 text-sm text-slate-500">
+                        <div class="flex items-center justify-between flex-col sm:flex-row">
+                            <div class="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm text-slate-500 mb-4 sm:mb-0">
                                 <span class="font-medium">Job #JOB003</span>
                                 <span>•</span>
                                 <span>Client: Downtown Properties</span>
@@ -376,7 +417,7 @@
                                     Contact: Lisa Chen
                                 </span>
                             </div>
-                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200" onclick="viewJobDetails('JOB003')">
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors duration-200" onclick="viewJobDetails('JOB003')">
                                 View Details
                             </button>
                         </div>
@@ -622,10 +663,10 @@
         // Update location button appearance
         function updateLocationButton() {
             if (locationEnabled) {
-                locationToggle.className = 'location-btn-active px-8 py-4 rounded-xl text-white font-semibold text-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-emerald-500/30';
+                locationToggle.className = 'location-btn-active px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-white font-semibold text-base sm:text-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-emerald-500/30';
                 locationBtnText.textContent = 'Disable Location Sharing';
             } else {
-                locationToggle.className = 'location-btn-inactive px-8 py-4 rounded-xl text-white font-semibold text-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-emerald-500/30';
+                locationToggle.className = 'location-btn-inactive px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-white font-semibold text-base sm:text-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-emerald-500/30';
                 locationBtnText.textContent = 'Enable Location Sharing';
             }
         }
@@ -679,11 +720,11 @@
             if (jobs.length === 0) {
                 jobsList.innerHTML = `
                     <div class="text-center py-12">
-                        <svg class="w-16 h-16 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                         </svg>
-                        <h3 class="text-lg font-medium text-slate-600 mb-2">No Active Jobs</h3>
-                        <p class="text-slate-500">Check back later for new assignments</p>
+                        <h3 class="text-base sm:text-lg font-medium text-slate-600 mb-2">No Active Jobs</h3>
+                        <p class="text-xs sm:text-sm text-slate-500">Check back later for new assignments</p>
                     </div>
                 `;
                 jobCount.textContent = '0';
@@ -709,18 +750,18 @@
             const priorityClass = priorityColors[job.priority] || priorityColors.medium;
 
             return `
-                <div class="job-card bg-white rounded-2xl p-6 border border-slate-200 shadow-lg">
-                    <div class="flex items-start justify-between mb-4">
+                <div class="job-card bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-lg">
+                    <div class="flex items-start justify-between mb-4 flex-col sm:flex-row">
                         <div class="flex-1">
-                            <h3 class="text-xl font-bold text-slate-800 mb-2">${job.title}</h3>
+                            <h3 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">${job.title}</h3>
                             <div class="flex items-center space-x-2 text-slate-600 mb-3">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                 </svg>
-                                <span class="font-medium">${job.address}</span>
+                                <span class="font-medium text-sm sm:text-base">${job.address}</span>
                             </div>
                         </div>
-                        <span class="${priorityClass} px-3 py-1 rounded-full text-sm font-semibold">
+                        <span class="${priorityClass} px-3 py-1 rounded-full text-xs sm:text-sm font-semibold mt-2 sm:mt-0">
                             ${job.priority.toUpperCase()} PRIORITY
                         </span>
                     </div>
@@ -730,19 +771,19 @@
                             <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            <span class="font-medium">${formatScheduledTime(job.scheduledTime)}</span>
+                            <span class="font-medium text-sm sm:text-base">${formatScheduledTime(job.scheduledTime)}</span>
                         </div>
                         <div class="flex items-center space-x-3 text-slate-600">
                             <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            <span class="font-medium">Duration: ${job.estimatedDuration || '2'} hours</span>
+                            <span class="font-medium text-sm sm:text-base">Duration: ${job.estimatedDuration || '2'} hours</span>
                         </div>
                     </div>
 
                     ${job.notes ? `
                         <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4 rounded-r-lg">
-                            <p class="text-blue-800 font-medium">
+                            <p class="text-blue-800 font-medium text-sm sm:text-base">
                                 <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
@@ -751,8 +792,8 @@
                         </div>
                     ` : ''}
 
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-4 text-sm text-slate-500">
+                    <div class="flex items-center justify-between flex-col sm:flex-row">
+                        <div class="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm text-slate-500 mb-4 sm:mb-0">
                             <span class="font-medium">Job #${job.jobId}</span>
                             <span>•</span>
                             <span>Client: ${job.clientName}</span>
@@ -764,7 +805,7 @@
                                 Contact: ${job.contactPerson}
                             </span>
                         </div>
-                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200" onclick="viewJobDetails('${job.jobId}')">
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors duration-200" onclick="viewJobDetails('${job.jobId}')">
                             View Details
                         </button>
                     </div>
@@ -845,20 +886,6 @@
 
         // Initialize app
         function initApp() {
-            console.log('Initializing CleanPro Dashboard...');
-            
-            // Initialize Firebase
-            initFirebase();
-            
-            // Initialize Google Maps if available
-            initMap();
-            
-            // Set initial sync time
-            updateSyncTime();
-            
-            // Update sync time every minute
-            setInterval(updateSyncTime, 60000);
-
             console.log('Dashboard initialized successfully!');
             showNotification('Dashboard loaded successfully!', 'success');
         }
