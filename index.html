@@ -96,6 +96,16 @@
         }
         .checklist-item {
             transition: all 0.2s ease;
+            white-space: normal;
+            word-break: break-word;
+        }
+        .checklist-item input[type="checkbox"] {
+            pointer-events: auto; /* Ensure checkbox is clickable */
+        }
+        .checklist-item label {
+            white-space: normal;
+            overflow: visible;
+            cursor: pointer;
         }
         .checklist-item.checked {
             background: linear-gradient(135deg, #dcfce7, #bbf7d0);
@@ -119,6 +129,10 @@
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
+        }
+        #calendarView {
+            transition: max-height 0.3s ease-out;
+            overflow-y: auto;
         }
     </style>
 </head>
@@ -152,7 +166,7 @@
     </header>
 
     <!-- Calendar View (Collapsible) -->
-    <div id="calendarView" class="bg-white border-b border-slate-200 px-4 py-4 overflow-hidden transition-all duration-300" style="max-height: 0;">
+    <div id="calendarView" class="bg-white border-b border-slate-200 px-4 py-4 transition-all duration-300" style="max-height: 0;">
         <div class="flex items-center justify-between mb-3">
             <button aria-label="Previous week" onclick="changeWeek(-1)" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
                 <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -311,7 +325,7 @@
             return div.innerHTML;
         }
 
-        // Mock data with extended dates
+        // Mock data
         const generateJobs = () => {
             const locations = [
                 { name: 'Downtown Hotel', address: '123 Main St, Ocean City, MD 21842' },
@@ -391,9 +405,11 @@
             updateStats();
             showToast('Welcome back! Ready to clean.', 'info');
 
-            // Event delegation for dynamic elements
+            // Event listeners
             document.getElementById('jobsList').addEventListener('click', handleJobCardClick);
             document.getElementById('checklistContent').addEventListener('click', handleChecklistClick);
+            document.getElementById('calendarToggle').addEventListener('click', toggleCalendarView);
+            document.getElementById('locationBtn').addEventListener('click', toggleLocation);
         });
 
         // Handle job card clicks
@@ -411,11 +427,11 @@
             }
         }
 
-        // Handle checklist item clicks
+        // Handle checklist clicks
         function handleChecklistClick(event) {
-            const checklistItem = event.target.closest('.checklist-item');
-            if (!checklistItem) return;
-            const itemId = parseInt(checklistItem.dataset.itemId, 10);
+            const checkbox = event.target.closest('input[type="checkbox"]');
+            if (!checkbox) return;
+            const itemId = parseInt(checkbox.closest('.checklist-item').dataset.itemId, 10);
             toggleChecklistItem(itemId);
         }
 
@@ -458,6 +474,22 @@
                 dayDiv.addEventListener('click', () => selectDate(dateStr));
                 grid.appendChild(dayDiv);
             }
+            console.log('Calendar generated for:', weekDisplay.textContent); // Debug log
+        }
+
+        // Toggle calendar view
+        function toggleCalendarView() {
+            const calendarView = document.getElementById('calendarView');
+            const isOpen = calendarView.style.maxHeight !== '0px';
+            
+            if (isOpen) {
+                calendarView.style.maxHeight = '0px';
+                calendarView.setAttribute('aria-hidden', 'true');
+            } else {
+                // Calculate the content height dynamically
+                calendarView.style.maxHeight = `${calendarView.scrollHeight}px`;
+                calendarView.setAttribute('aria-hidden', 'false');
+            }
         }
 
         // Select date
@@ -472,20 +504,6 @@
         function changeWeek(direction) {
             currentWeekOffset += direction;
             generateCalendar();
-        }
-
-        // Toggle calendar view
-        function toggleCalendarView() {
-            const calendarView = document.getElementById('calendarView');
-            const isOpen = calendarView.style.maxHeight !== '0px';
-            
-            if (isOpen) {
-                calendarView.style.maxHeight = '0px';
-                calendarView.setAttribute('aria-hidden', 'true');
-            } else {
-                calendarView.style.maxHeight = '400px';
-                calendarView.setAttribute('aria-hidden', 'false');
-            }
         }
 
         // Render jobs
@@ -893,17 +911,20 @@
 
         // Toggle checklist item
         function toggleChecklistItem(itemId) {
+            if (!checklistState.hasOwnProperty(itemId)) return;
+
             checklistState[itemId] = !checklistState[itemId];
             
             const checkbox = document.getElementById(`check-${itemId}`);
             const item = checkbox.closest('.checklist-item');
             
-            checkbox.checked = checklistState[itemId];
-            
-            if (checklistState[itemId]) {
-                item.classList.add('checked');
-            } else {
-                item.classList.remove('checked');
+            if (checkbox) {
+                checkbox.checked = checklistState[itemId];
+                if (checklistState[itemId]) {
+                    item.classList.add('checked');
+                } else {
+                    item.classList.remove('checked');
+                }
             }
             
             updateChecklistProgress();
@@ -1152,18 +1173,4 @@
         });
 
         // Auto-refresh jobs every 30 seconds
-        setInterval(() => {
-            jobs.forEach(job => {
-                if (Math.random() > 0.95 && !job.guestsOut && !job.inProgress && job.status !== 'completed') {
-                    job.guestsOut = true;
-                    if (job.date === selectedDate) {
-                        showToast(`🎉 Room ${escapeHTML(job.room)} is now ready!`, 'success');
-                        renderJobs();
-                        updateStats();
-                    }
-                }
-            });
-        }, 30000);
-    </script>
-</body>
-</html>
+        setInterval
