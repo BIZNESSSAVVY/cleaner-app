@@ -17,9 +17,6 @@
             overscroll-behavior: none;
             -webkit-tap-highlight-color: transparent;
         }
-        .gradient-bg { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-        }
         .glass-effect { 
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(20px);
@@ -41,16 +38,40 @@
             background: linear-gradient(135deg, #fef3c7, #fde047);
             border: 2px solid #eab308;
         }
+        .status-in-progress {
+            background: linear-gradient(135deg, #dbeafe, #93c5fd);
+            border: 2px solid #3b82f6;
+            animation: progressPulse 1.5s ease-in-out infinite;
+        }
         @keyframes readyPulse {
             0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
             50% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
         }
-        .location-active {
-            animation: locationPulse 2s ease-in-out infinite;
+        @keyframes progressPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
         }
-        @keyframes locationPulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.05); }
+        .calendar-day {
+            transition: all 0.2s ease;
+        }
+        .calendar-day:active {
+            transform: scale(0.95);
+        }
+        .calendar-day.selected {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            font-weight: 700;
+        }
+        .calendar-day.has-jobs::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: #ef4444;
+            border-radius: 50%;
         }
         .floating-btn {
             position: fixed;
@@ -73,16 +94,16 @@
             transform: translateX(-50%) translateY(0);
             opacity: 1;
         }
-        .tab-indicator {
-            position: absolute;
-            bottom: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #3b82f6, #2563eb);
-            transition: all 0.3s ease-in-out;
+        .checklist-item {
+            transition: all 0.2s ease;
         }
-        .swipe-action {
-            transform: translateX(0);
-            transition: transform 0.3s ease-in-out;
+        .checklist-item.checked {
+            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+            border-color: #22c55e;
+        }
+        .checklist-item input[type="checkbox"]:checked + label {
+            text-decoration: line-through;
+            opacity: 0.6;
         }
         @keyframes slideUp {
             from { transform: translateY(100%); opacity: 0; }
@@ -91,12 +112,13 @@
         .slide-up {
             animation: slideUp 0.3s ease-out;
         }
-        .badge-pulse {
-            animation: badgePulse 2s ease-in-out infinite;
+        .modal-overlay {
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.2s ease-out;
         }
-        @keyframes badgePulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
     </style>
 </head>
@@ -115,65 +137,67 @@
             </div>
             
             <div class="flex items-center space-x-3">
+                <button id="calendarToggle" onclick="toggleCalendarView()" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors">
+                    <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                </button>
+                
                 <button id="locationBtn" onclick="toggleLocation()" class="relative p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors">
                     <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                     </svg>
                     <div id="locationDot" class="absolute top-1 right-1 w-2.5 h-2.5 bg-gray-400 rounded-full"></div>
                 </button>
-                
-                <div class="relative">
-                    <button class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors">
-                        <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                        </svg>
-                    </button>
-                    <div id="notificationBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center badge-pulse hidden">
-                        0
-                    </div>
-                </div>
             </div>
         </div>
     </div>
-    
-    <!-- Tabs -->
-    <div class="relative px-4">
-        <div class="flex space-x-1 border-b border-slate-200">
-            <button onclick="switchTab('today')" class="tab-btn flex-1 px-4 py-3 text-sm font-semibold text-blue-600 relative" data-tab="today">
-                Today
-                <span class="ml-1 px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full text-xs" id="todayCount">0</span>
-            </button>
-            <button onclick="switchTab('upcoming')" class="tab-btn flex-1 px-4 py-3 text-sm font-semibold text-slate-600 relative" data-tab="upcoming">
-                Upcoming
-                <span class="ml-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs" id="upcomingCount">0</span>
-            </button>
-            <button onclick="switchTab('completed')" class="tab-btn flex-1 px-4 py-3 text-sm font-semibold text-slate-600 relative" data-tab="completed">
-                Completed
-                <span class="ml-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs" id="completedCount">0</span>
-            </button>
-        </div>
-        <div class="tab-indicator" style="left: 0; width: 33.33%;"></div>
-    </div>
 </header>
 
-<!-- Main Content -->
-<main class="px-4 py-4 pb-24">
-    <!-- Quick Stats -->
-    <div class="grid grid-cols-3 gap-3 mb-4">
+<!-- Calendar View (Collapsible) -->
+<div id="calendarView" class="bg-white border-b border-slate-200 px-4 py-4 overflow-hidden transition-all duration-300" style="max-height: 0;">
+    <div class="flex items-center justify-between mb-3">
+        <button onclick="changeWeek(-1)" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+            <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </button>
+        <h3 class="text-sm font-bold text-slate-800" id="weekDisplay">This Week</h3>
+        <button onclick="changeWeek(1)" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+            <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </button>
+    </div>
+    <div id="calendarGrid" class="grid grid-cols-7 gap-2">
+        <!-- Calendar days will be generated here -->
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="px-4 py-4">
+    <div class="grid grid-cols-4 gap-2">
         <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
             <div class="text-2xl font-bold text-blue-600" id="statsTotal">0</div>
-            <div class="text-xs text-slate-600 font-medium">Total Today</div>
+            <div class="text-xs text-slate-600 font-medium">Total</div>
         </div>
         <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
             <div class="text-2xl font-bold text-green-600" id="statsReady">0</div>
-            <div class="text-xs text-slate-600 font-medium">Ready Now</div>
+            <div class="text-xs text-slate-600 font-medium">Ready</div>
         </div>
         <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
-            <div class="text-2xl font-bold text-amber-600" id="statsWaiting">0</div>
-            <div class="text-xs text-slate-600 font-medium">Waiting</div>
+            <div class="text-2xl font-bold text-blue-500" id="statsActive">0</div>
+            <div class="text-xs text-slate-600 font-medium">Active</div>
+        </div>
+        <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
+            <div class="text-2xl font-bold text-purple-600" id="statsDone">0</div>
+            <div class="text-xs text-slate-600 font-medium">Done</div>
         </div>
     </div>
+</div>
 
+<!-- Main Content -->
+<main class="px-4 pb-24">
     <!-- Jobs List -->
     <div id="jobsList" class="space-y-4">
         <!-- Jobs will be dynamically inserted here -->
@@ -186,8 +210,8 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
             </svg>
         </div>
-        <h3 class="text-lg font-semibold text-slate-700 mb-2">No Jobs Here</h3>
-        <p class="text-sm text-slate-500">Check other tabs for assignments</p>
+        <h3 class="text-lg font-semibold text-slate-700 mb-2">No Jobs</h3>
+        <p class="text-sm text-slate-500">Select a different date or check upcoming jobs</p>
     </div>
 </main>
 
@@ -215,9 +239,9 @@
 </div>
 
 <!-- Job Detail Modal -->
-<div id="jobModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden" onclick="closeModal(event)">
+<div id="jobModal" class="fixed inset-0 bg-black/60 modal-overlay z-50 hidden" onclick="closeModal(event)">
     <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[85vh] overflow-y-auto slide-up" onclick="event.stopPropagation()">
-        <div class="sticky top-0 bg-white border-b border-slate-200 px-4 py-4 flex items-center justify-between rounded-t-3xl">
+        <div class="sticky top-0 bg-white border-b border-slate-200 px-4 py-4 flex items-center justify-between rounded-t-3xl z-10">
             <h2 class="text-xl font-bold text-slate-800" id="modalTitle">Job Details</h2>
             <button onclick="closeJobModal()" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
                 <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,140 +256,217 @@
     </div>
 </div>
 
+<!-- Checklist Modal -->
+<div id="checklistModal" class="fixed inset-0 bg-black/60 modal-overlay z-50 hidden" onclick="closeChecklistModal(event)">
+    <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[90vh] overflow-y-auto slide-up" onclick="event.stopPropagation()">
+        <div class="sticky top-0 bg-white border-b border-slate-200 px-4 py-4 flex items-center justify-between rounded-t-3xl z-10">
+            <div>
+                <h2 class="text-xl font-bold text-slate-800">Completion Checklist</h2>
+                <p class="text-xs text-slate-600" id="checklistJobInfo">Room 205 - Downtown Hotel</p>
+            </div>
+            <div class="text-right">
+                <div class="text-2xl font-bold text-blue-600" id="checklistProgress">0%</div>
+                <div class="text-xs text-slate-600">Complete</div>
+            </div>
+        </div>
+        
+        <div class="p-4">
+            <div id="checklistContent" class="space-y-3">
+                <!-- Checklist items will be generated here -->
+            </div>
+            
+            <!-- Photo Upload (Optional) -->
+            <div class="mt-6 pt-6 border-t border-slate-200">
+                <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Photos (Optional)
+                </h3>
+                <label class="flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 text-slate-700 rounded-lg border-2 border-dashed border-slate-300 hover:bg-slate-200 transition-colors cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Add Photos
+                    <input type="file" accept="image/*" multiple class="hidden" onchange="handlePhotoUpload(event)">
+                </label>
+                <div id="photoPreview" class="grid grid-cols-3 gap-2 mt-3"></div>
+            </div>
+
+            <!-- Notes -->
+            <div class="mt-6">
+                <label class="block text-sm font-bold text-slate-800 mb-2">Notes (Optional)</label>
+                <textarea id="checklistNotes" rows="3" placeholder="Any issues or special notes..." class="w-full px-3 py-2 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <button onclick="completeJob()" id="completeBtn" class="w-full mt-6 px-4 py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-bold text-lg hover:from-green-700 hover:to-green-800 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Complete Job
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
-// Mock data - syncs with your main dashboard
-const MOCK_JOBS = [
-    {
-        id: 1,
-        location: 'Downtown Hotel',
-        address: '123 Main St, Ocean City, MD 21842',
-        room: '205',
-        roomType: 'Deluxe Suite',
-        startTime: '09:00',
-        dueTime: '11:00',
-        predictedTime: '2h 0m',
-        guestCount: 2,
-        dogCount: 0,
-        wifiIncluded: true,
-        linenPickup: true,
-        guestsOut: true,
-        priority: 'high',
-        lockCode: '356374',
-        wifiNetwork: 'Rockyroad',
-        wifiPassword: 'COvid$Sucks!',
-        bedInfo: '1 King Bed',
-        bathInfo: '1 Full Bath',
-        permanentInstructions: 'Standard deep clean protocol',
-        weekSpecificInstructions: 'Focus on bathroom deep clean',
-        linenInstructions: 'Pick up at 128th Street office',
-        parkingSpace: 'Space #A-12',
-        parkingInstructions: 'Enter through main gate',
-        date: new Date().toISOString().split('T')[0],
-        status: 'assigned'
-    },
-    {
-        id: 2,
-        location: 'Riverside Inn',
-        address: '456 River Rd, Ocean City, MD 21843',
-        room: '312',
-        roomType: 'Standard Room',
-        startTime: '12:00',
-        dueTime: '14:00',
-        predictedTime: '2h 0m',
-        guestCount: 3,
-        dogCount: 1,
-        wifiIncluded: true,
-        linenPickup: false,
-        guestsOut: false,
-        priority: 'normal',
-        lockCode: '789456',
-        wifiNetwork: 'RiversideGuest',
-        wifiPassword: 'Welcome2023!',
-        bedInfo: '2 Queen Beds',
-        bathInfo: '1 Full Bath',
-        permanentInstructions: 'Standard clean',
-        weekSpecificInstructions: 'Extra attention to carpets',
-        linenInstructions: 'N/A',
-        parkingSpace: 'Space #B-5',
-        parkingInstructions: 'Park in visitor lot',
-        date: new Date().toISOString().split('T')[0],
-        status: 'assigned'
-    },
-    {
-        id: 3,
-        location: 'City Center Lodge',
-        address: '789 City Ave, Ocean City, MD 21844',
-        room: '108',
-        roomType: 'Presidential Suite',
-        startTime: '14:30',
-        dueTime: '17:00',
-        predictedTime: '2h 30m',
-        guestCount: 4,
-        dogCount: 0,
-        wifiIncluded: true,
-        linenPickup: true,
-        guestsOut: true,
-        priority: 'high',
-        lockCode: '112233',
-        wifiNetwork: 'CityCenterVIP',
-        wifiPassword: 'Luxury@2023',
-        bedInfo: '1 King Bed, 2 Twin Beds',
-        bathInfo: '2 Full Baths',
-        permanentInstructions: 'VIP treatment - white glove service',
-        weekSpecificInstructions: 'Polish all surfaces',
-        linenInstructions: 'Pick up premium linens at front desk',
-        parkingSpace: 'Space #V-1',
-        parkingInstructions: 'VIP parking entrance',
-        date: new Date().toISOString().split('T')[0],
-        status: 'assigned'
+// Mock data with extended dates
+const generateJobs = () => {
+    const locations = [
+        { name: 'Downtown Hotel', address: '123 Main St, Ocean City, MD 21842' },
+        { name: 'Riverside Inn', address: '456 River Rd, Ocean City, MD 21843' },
+        { name: 'City Center Lodge', address: '789 City Ave, Ocean City, MD 21844' },
+        { name: 'Park View Resort', address: '101 Park Ln, Ocean City, MD 21845' },
+        { name: 'Marina Hotel', address: '202 Marina Dr, Ocean City, MD 21846' }
+    ];
+    
+    const jobs = [];
+    for (let i = 0; i < 20; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() + Math.floor(Math.random() * 14) - 3); // -3 to +11 days
+        const locationData = locations[Math.floor(Math.random() * locations.length)];
+        
+        jobs.push({
+            id: i + 1,
+            location: locationData.name,
+            address: locationData.address,
+            room: `${Math.floor(Math.random() * 300) + 100}`,
+            roomType: ['Standard Room', 'Deluxe Suite', 'Presidential Suite'][Math.floor(Math.random() * 3)],
+            startTime: `${8 + Math.floor(Math.random() * 8)}:00`,
+            dueTime: `${12 + Math.floor(Math.random() * 6)}:00`,
+            predictedTime: `${1 + Math.floor(Math.random() * 3)}h ${Math.floor(Math.random() * 60)}m`,
+            guestCount: Math.floor(Math.random() * 4) + 1,
+            dogCount: Math.random() > 0.7 ? 1 : 0,
+            wifiIncluded: Math.random() > 0.5,
+            linenPickup: Math.random() > 0.6,
+            guestsOut: Math.random() > 0.3,
+            priority: Math.random() > 0.8 ? 'high' : 'normal',
+            lockCode: String(Math.floor(Math.random() * 900000) + 100000),
+            wifiNetwork: 'GuestWiFi',
+            wifiPassword: 'Welcome123!',
+            bedInfo: '1 King Bed',
+            bathInfo: '1 Full Bath',
+            permanentInstructions: 'Standard deep clean protocol',
+            weekSpecificInstructions: 'Focus on bathroom deep clean',
+            linenInstructions: 'Pick up at front desk',
+            parkingSpace: `Space #${String.fromCharCode(65 + Math.floor(Math.random() * 5))}-${Math.floor(Math.random() * 20) + 1}`,
+            parkingInstructions: 'Enter through main gate',
+            date: date.toISOString().split('T')[0],
+            status: 'assigned',
+            inProgress: false
+        });
     }
+    return jobs;
+};
+
+// Checklist items
+const CHECKLIST_ITEMS = [
+    { id: 1, text: 'All surfaces wiped and disinfected', category: 'general' },
+    { id: 2, text: 'Floors vacuumed and mopped', category: 'general' },
+    { id: 3, text: 'Bathroom cleaned and sanitized', category: 'bathroom' },
+    { id: 4, text: 'Toilet, sink, and shower scrubbed', category: 'bathroom' },
+    { id: 5, text: 'Fresh towels and linens provided', category: 'linens' },
+    { id: 6, text: 'Bed made with fresh sheets', category: 'linens' },
+    { id: 7, text: 'Trash emptied and bags replaced', category: 'general' },
+    { id: 8, text: 'Kitchen/Kitchenette cleaned', category: 'kitchen' },
+    { id: 9, text: 'Windows and mirrors cleaned', category: 'general' },
+    { id: 10, text: 'Check for damages or maintenance issues', category: 'inspection' }
 ];
 
 // State
-let currentTab = 'today';
+let jobs = generateJobs();
+let selectedDate = new Date().toISOString().split('T')[0];
+let currentWeekOffset = 0;
 let locationEnabled = false;
 let watchId = null;
-let jobs = [...MOCK_JOBS];
+let currentJobId = null;
+let uploadedPhotos = [];
+let checklistState = {};
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    generateCalendar();
     renderJobs();
     updateStats();
-    showToast('Welcome back! You have new assignments.', 'info');
-    
-    // Simulate real-time updates
-    setInterval(() => {
-        // Randomly update a guest status (simulating dashboard updates)
-        if (Math.random() > 0.7) {
-            const randomJob = jobs[Math.floor(Math.random() * jobs.length)];
-            const oldStatus = randomJob.guestsOut;
-            randomJob.guestsOut = !randomJob.guestsOut;
-            renderJobs();
-            updateStats();
-            
-            if (randomJob.guestsOut && !oldStatus) {
-                showToast(`🎉 Room ${randomJob.room} is now ready to clean!`, 'success');
-                updateNotificationBadge(1);
-            }
-        }
-    }, 15000); // Check every 15 seconds
+    showToast('Welcome back! Ready to clean.', 'info');
 });
+
+// Generate calendar
+function generateCalendar() {
+    const grid = document.getElementById('calendarGrid');
+    const weekDisplay = document.getElementById('weekDisplay');
+    
+    const today = new Date();
+    today.setDate(today.getDate() + (currentWeekOffset * 7));
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    
+    const weekStart = new Date(startOfWeek);
+    const weekEnd = new Date(startOfWeek);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    
+    weekDisplay.textContent = currentWeekOffset === 0 ? 'This Week' : 
+        `${weekStart.getMonth() + 1}/${weekStart.getDate()} - ${weekEnd.getMonth() + 1}/${weekEnd.getDate()}`;
+    
+    grid.innerHTML = '';
+    const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(startOfWeek);
+        date.setDate(startOfWeek.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        const jobCount = jobs.filter(j => j.date === dateStr).length;
+        
+        const dayDiv = document.createElement('div');
+        dayDiv.className = `calendar-day relative text-center py-3 rounded-lg cursor-pointer transition-all border-2 ${
+            dateStr === selectedDate ? 'selected' : 'bg-white border-slate-200 hover:bg-slate-50'
+        } ${jobCount > 0 ? 'has-jobs' : ''}`;
+        
+        dayDiv.innerHTML = `
+            <div class="text-xs font-medium opacity-70">${days[i]}</div>
+            <div class="text-lg font-bold">${date.getDate()}</div>
+            ${jobCount > 0 ? `<div class="text-xs text-blue-600 font-semibold">${jobCount}</div>` : ''}
+        `;
+        
+        dayDiv.onclick = () => selectDate(dateStr);
+        grid.appendChild(dayDiv);
+    }
+}
+
+// Select date
+function selectDate(dateStr) {
+    selectedDate = dateStr;
+    generateCalendar();
+    renderJobs();
+    updateStats();
+}
+
+// Change week
+function changeWeek(direction) {
+    currentWeekOffset += direction;
+    generateCalendar();
+}
+
+// Toggle calendar view
+function toggleCalendarView() {
+    const calendarView = document.getElementById('calendarView');
+    const isOpen = calendarView.style.maxHeight !== '0px';
+    
+    if (isOpen) {
+        calendarView.style.maxHeight = '0px';
+    } else {
+        calendarView.style.maxHeight = '400px';
+    }
+}
 
 // Render jobs
 function renderJobs() {
     const container = document.getElementById('jobsList');
     const emptyState = document.getElementById('emptyState');
     
-    const today = new Date().toISOString().split('T')[0];
-    const filteredJobs = jobs.filter(job => {
-        if (currentTab === 'today') {
-            return job.date === today && job.status === 'assigned';
-        } else if (currentTab === 'upcoming') {
-            return job.date > today && job.status === 'assigned';
-        } else {
-            return job.status === 'completed';
-        }
-    });
+    const filteredJobs = jobs.filter(job => job.date === selectedDate);
 
     if (filteredJobs.length === 0) {
         container.innerHTML = '';
@@ -374,20 +475,27 @@ function renderJobs() {
     }
 
     emptyState.classList.add('hidden');
-    
     container.innerHTML = filteredJobs.map(job => createJobCard(job)).join('');
-    
-    // Update tab counts
-    document.getElementById('todayCount').textContent = jobs.filter(j => j.date === today && j.status === 'assigned').length;
-    document.getElementById('upcomingCount').textContent = jobs.filter(j => j.date > today && j.status === 'assigned').length;
-    document.getElementById('completedCount').textContent = jobs.filter(j => j.status === 'completed').length;
 }
 
 // Create job card
 function createJobCard(job) {
-    const statusClass = job.guestsOut ? 'status-ready' : 'status-waiting';
-    const statusText = job.guestsOut ? '✓ READY TO CLEAN' : '⏳ GUESTS STILL IN';
-    const statusIcon = job.guestsOut ? '✓' : '⏳';
+    let statusClass, statusText, statusIcon;
+    
+    if (job.inProgress) {
+        statusClass = 'status-in-progress';
+        statusText = '🔄 CLEANING IN PROGRESS';
+        statusIcon = '🔄';
+    } else if (job.guestsOut) {
+        statusClass = 'status-ready';
+        statusText = '✓ READY TO CLEAN';
+        statusIcon = '✓';
+    } else {
+        statusClass = 'status-waiting';
+        statusText = '⏳ GUESTS STILL IN';
+        statusIcon = '⏳';
+    }
+    
     const priorityBadge = job.priority === 'high' ? `
         <span class="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full border border-red-200">
             URGENT
@@ -396,13 +504,11 @@ function createJobCard(job) {
 
     return `
         <div class="job-card bg-white rounded-2xl shadow-lg border-2 border-slate-100 overflow-hidden" onclick="openJobModal(${job.id})">
-            <!-- Status Banner -->
             <div class="${statusClass} px-4 py-3 text-center font-bold text-sm">
                 ${statusText}
             </div>
             
             <div class="p-4">
-                <!-- Header -->
                 <div class="flex items-start justify-between mb-3">
                     <div class="flex-1">
                         <div class="flex items-center gap-2 mb-1">
@@ -416,7 +522,6 @@ function createJobCard(job) {
                     </div>
                 </div>
 
-                <!-- Location -->
                 <div class="flex items-center gap-2 mb-3 text-slate-700">
                     <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
@@ -424,7 +529,6 @@ function createJobCard(job) {
                     <span class="text-sm font-medium">${job.location}</span>
                 </div>
 
-                <!-- Time & Details -->
                 <div class="grid grid-cols-2 gap-3 mb-3">
                     <div class="flex items-center gap-2 text-slate-600">
                         <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -440,20 +544,18 @@ function createJobCard(job) {
                     </div>
                 </div>
 
-                <!-- Badges -->
                 <div class="flex flex-wrap gap-2 mb-3">
                     ${job.wifiIncluded ? '<span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full border border-blue-200">WiFi</span>' : ''}
                     ${job.linenPickup ? '<span class="px-2 py-1 bg-amber-50 text-amber-700 text-xs font-semibold rounded-full border border-amber-200">Linen Pickup</span>' : ''}
-                    ${job.dogCount > 0 ? `<span class="px-2 py-1 bg-purple-50 text-purple-700 text-xs font-semibold rounded-full border border-purple-200">${job.dogCount} Dog${job.dogCount > 1 ? 's' : ''}</span>` : ''}
+                    ${job.dogCount > 0 ? '<span class="px-2 py-1 bg-purple-50 text-purple-700 text-xs font-semibold rounded-full border border-purple-200">Dog</span>' : ''}
                 </div>
 
-                <!-- Action Buttons -->
                 <div class="grid grid-cols-3 gap-2">
                     <button onclick="event.stopPropagation(); navigate(${job.id})" class="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"></path>
                         </svg>
-                        Navigate
+                        Nav
                     </button>
                     <button onclick="event.stopPropagation(); callProperty(${job.id})" class="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -466,7 +568,7 @@ function createJobCard(job) {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                         </svg>
-                        Details
+                        View
                     </button>
                 </div>
             </div>
@@ -486,9 +588,37 @@ function openJobModal(jobId) {
     title.textContent = `${job.location} - Room ${job.room}`;
     
     content.innerHTML = `
-        <!-- Guest Status -->
-        <div class="${job.guestsOut ? 'status-ready' : 'status-waiting'} px-6 py-4 rounded-xl text-center font-bold text-lg mb-4">
-            ${job.guestsOut ? '✓ GUESTS OUT - READY TO CLEAN' : '⏳ GUESTS STILL IN UNIT'}
+        <!-- Guest Status with Override -->
+        <div class="mb-4">
+            ${job.inProgress ? `
+                <div class="status-in-progress px-6 py-4 rounded-xl text-center font-bold text-lg mb-4">
+                    🔄 CLEANING IN PROGRESS
+                </div>
+            ` : `
+                <div class="${job.guestsOut ? 'status-ready' : 'status-waiting'} px-6 py-4 rounded-xl text-center font-bold text-lg mb-4">
+                    ${job.guestsOut ? '✓ GUESTS OUT - READY TO CLEAN' : '⏳ GUESTS STILL IN UNIT'}
+                </div>
+            `}
+            
+            ${!job.guestsOut && !job.inProgress ? `
+                <div class="bg-amber-50 border-2 border-amber-200 rounded-xl p-4">
+                    <div class="flex items-start gap-3 mb-3">
+                        <svg class="w-5 h-5 text-amber-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                        <div>
+                            <p class="text-sm font-semibold text-amber-900 mb-1">System shows guests are still in unit</p>
+                            <p class="text-xs text-amber-800">If you know guests have left, you can override and start cleaning cautiously.</p>
+                        </div>
+                    </div>
+                    <button onclick="overrideAndStart(${job.id})" class="w-full px-4 py-3 bg-amber-600 text-white rounded-lg font-bold hover:bg-amber-700 transition-all flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        Override & Start Cleaning
+                    </button>
+                </div>
+            ` : ''}
         </div>
 
         <!-- Critical Info -->
@@ -550,7 +680,7 @@ function openJobModal(jobId) {
             <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
                     <span class="text-slate-600">Address:</span>
-                    <span class="font-medium text-slate-800 text-right">${job.address}</span>
+                    <span class="font-medium text-slate-800 text-right text-xs">${job.address}</span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-slate-600">Room Type:</span>
@@ -633,17 +763,226 @@ function openJobModal(jobId) {
             </button>
         </div>
 
-        <button onclick="startJob(${job.id})" class="w-full px-4 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-bold text-lg hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg flex items-center justify-center gap-2">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            START CLEANING
-        </button>
+        ${job.inProgress ? `
+            <button onclick="openChecklistModal(${job.id})" class="w-full px-4 py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-bold text-lg hover:from-green-700 hover:to-green-800 transition-all shadow-lg flex items-center justify-center gap-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                </svg>
+                FINISH & SUBMIT CHECKLIST
+            </button>
+        ` : job.guestsOut ? `
+            <button onclick="startJob(${job.id})" class="w-full px-4 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-bold text-lg hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg flex items-center justify-center gap-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                START CLEANING NOW
+            </button>
+        ` : ''}
     `;
 
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+}
+
+// Override and start
+function overrideAndStart(jobId) {
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    if (confirm('⚠️ Are you sure guests have left?\n\nYou are overriding the system status. Please proceed with caution and verify the unit is vacant before entering.')) {
+        job.guestsOut = true;
+        showToast('Status overridden. Starting job...', 'warning');
+        setTimeout(() => {
+            startJob(jobId);
+        }, 500);
+    }
+}
+
+// Start job
+function startJob(jobId) {
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    job.inProgress = true;
+    showToast('Job started! Timer is running...', 'success');
+    closeJobModal();
+    renderJobs();
+    updateStats();
+    
+    // Re-open modal to show finish button
+    setTimeout(() => openJobModal(jobId), 300);
+}
+
+// Open checklist modal
+function openChecklistModal(jobId) {
+    currentJobId = jobId;
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    const modal = document.getElementById('checklistModal');
+    const jobInfo = document.getElementById('checklistJobInfo');
+    const content = document.getElementById('checklistContent');
+
+    jobInfo.textContent = `Room ${job.room} - ${job.location}`;
+    
+    // Initialize checklist state
+    checklistState = {};
+    CHECKLIST_ITEMS.forEach(item => {
+        checklistState[item.id] = false;
+    });
+
+    // Group by category
+    const categories = {
+        general: 'General Cleaning',
+        bathroom: 'Bathroom',
+        linens: 'Linens & Bedding',
+        kitchen: 'Kitchen',
+        inspection: 'Final Inspection'
+    };
+
+    let currentCategory = '';
+    content.innerHTML = CHECKLIST_ITEMS.map(item => {
+        let categoryHeader = '';
+        if (item.category !== currentCategory) {
+            currentCategory = item.category;
+            categoryHeader = `
+                <div class="text-xs font-bold text-slate-600 uppercase tracking-wide mt-4 mb-2 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    ${categories[item.category]}
+                </div>
+            `;
+        }
+
+        return `
+            ${categoryHeader}
+            <div class="checklist-item bg-white border-2 border-slate-200 rounded-xl p-4 cursor-pointer hover:border-slate-300 transition-all" onclick="toggleChecklistItem(${item.id})">
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="check-${item.id}" class="w-6 h-6 text-green-600 rounded-lg border-2 border-slate-300 focus:ring-2 focus:ring-green-500 cursor-pointer" onchange="toggleChecklistItem(${item.id})">
+                    <label for="check-${item.id}" class="flex-1 font-medium text-slate-800 cursor-pointer select-none">
+                        ${item.text}
+                    </label>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    uploadedPhotos = [];
+    document.getElementById('photoPreview').innerHTML = '';
+    document.getElementById('checklistNotes').value = '';
+    
+    updateChecklistProgress();
+    closeJobModal();
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+// Toggle checklist item
+function toggleChecklistItem(itemId) {
+    checklistState[itemId] = !checklistState[itemId];
+    
+    const checkbox = document.getElementById(`check-${itemId}`);
+    const item = checkbox.closest('.checklist-item');
+    
+    checkbox.checked = checklistState[itemId];
+    
+    if (checklistState[itemId]) {
+        item.classList.add('checked');
+    } else {
+        item.classList.remove('checked');
+    }
+    
+    updateChecklistProgress();
+}
+
+// Update checklist progress
+function updateChecklistProgress() {
+    const total = CHECKLIST_ITEMS.length;
+    const completed = Object.values(checklistState).filter(v => v).length;
+    const percentage = Math.round((completed / total) * 100);
+    
+    document.getElementById('checklistProgress').textContent = `${percentage}%`;
+    
+    const completeBtn = document.getElementById('completeBtn');
+    if (percentage === 100) {
+        completeBtn.disabled = false;
+    } else {
+        completeBtn.disabled = true;
+    }
+}
+
+// Handle photo upload
+function handlePhotoUpload(event) {
+    const files = Array.from(event.target.files);
+    const preview = document.getElementById('photoPreview');
+    
+    files.forEach(file => {
+        if (uploadedPhotos.length >= 6) {
+            showToast('Maximum 6 photos allowed', 'warning');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            uploadedPhotos.push(e.target.result);
+            
+            const img = document.createElement('div');
+            img.className = 'relative aspect-square rounded-lg overflow-hidden border-2 border-slate-200';
+            img.innerHTML = `
+                <img src="${e.target.result}" class="w-full h-full object-cover">
+                <button onclick="removePhoto(${uploadedPhotos.length - 1})" class="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            `;
+            preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Remove photo
+function removePhoto(index) {
+    uploadedPhotos.splice(index, 1);
+    const preview = document.getElementById('photoPreview');
+    preview.children[index].remove();
+}
+
+// Complete job
+function completeJob() {
+    const job = jobs.find(j => j.id === currentJobId);
+    if (!job) return;
+
+    const notes = document.getElementById('checklistNotes').value;
+    
+    // Mark job as completed
+    job.status = 'completed';
+    job.inProgress = false;
+    job.completedAt = new Date().toISOString();
+    job.completionNotes = notes;
+    job.completionPhotos = uploadedPhotos.length;
+    
+    showToast('🎉 Job completed successfully!', 'success');
+    closeChecklistModal();
+    renderJobs();
+    updateStats();
+    
+    // Show success animation
+    setTimeout(() => {
+        showToast(`Great work! Room ${job.room} is done.`, 'success');
+    }, 1000);
+}
+
+// Close checklist modal
+function closeChecklistModal(event) {
+    if (event && event.target.id !== 'checklistModal') return;
+    
+    const modal = document.getElementById('checklistModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
 }
 
 // Close job modal
@@ -657,40 +996,19 @@ function closeJobModal() {
 function closeModal(event) {
     if (event.target.id === 'jobModal') {
         closeJobModal();
+    } else if (event.target.id === 'checklistModal') {
+        closeChecklistModal(event);
     }
-}
-
-// Switch tabs
-function switchTab(tab) {
-    currentTab = tab;
-    
-    // Update tab styling
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        if (btn.dataset.tab === tab) {
-            btn.classList.remove('text-slate-600');
-            btn.classList.add('text-blue-600');
-        } else {
-            btn.classList.remove('text-blue-600');
-            btn.classList.add('text-slate-600');
-        }
-    });
-    
-    // Move indicator
-    const indicator = document.querySelector('.tab-indicator');
-    const tabIndex = ['today', 'upcoming', 'completed'].indexOf(tab);
-    indicator.style.left = `${tabIndex * 33.33}%`;
-    
-    renderJobs();
 }
 
 // Update stats
 function updateStats() {
-    const today = new Date().toISOString().split('T')[0];
-    const todayJobs = jobs.filter(j => j.date === today && j.status === 'assigned');
+    const selectedDateJobs = jobs.filter(j => j.date === selectedDate);
     
-    document.getElementById('statsTotal').textContent = todayJobs.length;
-    document.getElementById('statsReady').textContent = todayJobs.filter(j => j.guestsOut).length;
-    document.getElementById('statsWaiting').textContent = todayJobs.filter(j => !j.guestsOut).length;
+    document.getElementById('statsTotal').textContent = selectedDateJobs.length;
+    document.getElementById('statsReady').textContent = selectedDateJobs.filter(j => j.guestsOut && !j.inProgress && j.status !== 'completed').length;
+    document.getElementById('statsActive').textContent = selectedDateJobs.filter(j => j.inProgress).length;
+    document.getElementById('statsDone').textContent = selectedDateJobs.filter(j => j.status === 'completed').length;
 }
 
 // Toggle location
@@ -710,12 +1028,12 @@ function startLocationTracking() {
     }
 
     locationEnabled = true;
-    document.getElementById('locationDot').className = 'absolute top-1 right-1 w-2.5 h-2.5 bg-green-500 rounded-full location-active';
+    document.getElementById('locationDot').className = 'absolute top-1 right-1 w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse';
     
     watchId = navigator.geolocation.watchPosition(
         (position) => {
-            // Update location in background
             console.log('Location updated:', position.coords.latitude, position.coords.longitude);
+            // In real app, send to server
         },
         (error) => {
             console.error('Location error:', error);
@@ -727,7 +1045,7 @@ function startLocationTracking() {
         }
     );
 
-    showToast('Location sharing enabled', 'success');
+    showToast('📍 Location sharing enabled', 'success');
 }
 
 // Stop location tracking
@@ -748,7 +1066,6 @@ function navigate(jobId) {
     const job = jobs.find(j => j.id === jobId);
     if (!job) return;
 
-    // Open in Google Maps or Apple Maps
     const address = encodeURIComponent(job.address);
     const mapsUrl = /iPhone|iPad|iPod/.test(navigator.userAgent)
         ? `maps://maps.google.com/maps?daddr=${address}`
@@ -760,39 +1077,23 @@ function navigate(jobId) {
 
 // Call property
 function callProperty(jobId) {
-    // In real app, this would call the property manager
     showToast('Calling property manager...', 'info');
-    // Simulate call
     setTimeout(() => {
         window.location.href = 'tel:+14431234567';
     }, 500);
-}
-
-// Start job
-function startJob(jobId) {
-    const job = jobs.find(j => j.id === jobId);
-    if (!job) return;
-
-    if (!job.guestsOut) {
-        showToast('⚠️ Warning: Guests are still in the unit!', 'warning');
-        return;
-    }
-
-    showToast('Job started! Timer is running...', 'success');
-    closeJobModal();
-    
-    // In real app, this would start job tracking
 }
 
 // Refresh jobs
 function refreshJobs() {
     showToast('Refreshing job list...', 'info');
     
-    // Simulate refresh
     setTimeout(() => {
+        // Simulate receiving updates from server
+        // In real app, this would fetch from API
         renderJobs();
         updateStats();
-        showToast('Jobs updated!', 'success');
+        generateCalendar();
+        showToast('✓ Jobs updated!', 'success');
     }, 1000);
 }
 
@@ -808,7 +1109,15 @@ function showToast(message, type = 'info') {
         info: 'border-blue-500'
     };
 
+    const icons = {
+        success: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>`,
+        error: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>`,
+        warning: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>`,
+        info: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>`
+    };
+
     toast.querySelector('.glass-effect').className = `glass-effect rounded-xl p-4 shadow-xl border-l-4 ${colors[type] || colors.info}`;
+    toast.querySelector('svg path').setAttribute('d', icons[type] || icons.info);
     toastMessage.textContent = message;
 
     toast.classList.add('show');
@@ -818,26 +1127,776 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
-// Update notification badge
-function updateNotificationBadge(count) {
-    const badge = document.getElementById('notificationBadge');
-    const currentCount = parseInt(badge.textContent || '0');
-    const newCount = currentCount + count;
-    
-    if (newCount > 0) {
-        badge.textContent = newCount;
-        badge.classList.remove('hidden');
-    } else {
-        badge.classList.add('hidden');
-    }
-}
-
-// Prevent back button on modal
+// Prevent back button on modals
 window.addEventListener('popstate', () => {
     if (!document.getElementById('jobModal').classList.contains('hidden')) {
         closeJobModal();
+    } else if (!document.getElementById('checklistModal').classList.contains('hidden')) {
+        closeChecklistModal();
     }
 });
+
+// Auto-refresh jobs every 30 seconds
+setInterval(() => {
+    // Simulate real-time updates
+    jobs.forEach(job => {
+        // Randomly update guest status (simulating office updates)
+        if (Math.random() > 0.95 && !job.guestsOut && !job.inProgress) {
+            job.guestsOut = true;
+            if (job.date === selectedDate) {
+                showToast(`🎉 Room ${job.room} is now ready!`, 'success');
+                renderJobs();
+                updateStats();
+            }
+        }
+    });
+}, 30000);
+</script>
+
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Savvy OS - My Jobs</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .glass-effect { 
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .job-card {
+            transform: translateY(0);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .job-card:active {
+            transform: scale(0.98);
+        }
+        .status-ready {
+            background: linear-gradient(135deg, #dcfce7, #86efac);
+            border: 2px solid #22c55e;
+            animation: readyPulse 2s ease-in-out infinite;
+        }
+        .status-waiting {
+            background: linear-gradient(135deg, #fef3c7, #fde047);
+            border: 2px solid #eab308;
+        }
+        .status-in-progress {
+            background: linear-gradient(135deg, #dbeafe, #93c5fd);
+            border: 2px solid #3b82f6;
+            animation: progressPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes readyPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+        }
+        @keyframes progressPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+        }
+        .calendar-day {
+            transition: all 0.2s ease;
+        }
+        .calendar-day:active {
+            transform: scale(0.95);
+        }
+        .calendar-day.selected {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            font-weight: 700;
+        }
+        .calendar-day.has-jobs::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: #ef4444;
+            border-radius: 50%;
+        }
+        .floating-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.4);
+        }
+        .notification-toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            opacity: 0;
+            transition: all 0.3s ease-in-out;
+            z-index: 1000;
+            max-width: 90%;
+        }
+        .notification-toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        .checklist-item {
+            transition: all 0.2s ease;
+        }
+        .checklist-item.checked {
+            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+            border-color: #22c55e;
+        }
+        .checklist-item input[type="checkbox"]:checked + label {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        .modal-overlay {
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.2s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+
+<!-- Header -->
+<header class="glass-effect sticky top-0 z-50 border-b border-white/20">
+    <div class="px-4 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <img src="savvy-os-logo.png" alt="Savvy OS" class="w-10 h-10 rounded-xl">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800">My Jobs</h1>
+                    <p class="text-xs text-slate-600" id="cleanerName">Sarah Johnson</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button id="calendarToggle" onclick="toggleCalendarView()" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors">
+                    <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                </button>
+                
+                <button id="locationBtn" onclick="toggleLocation()" class="relative p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors">
+                    <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    </svg>
+                    <div id="locationDot" class="absolute top-1 right-1 w-2.5 h-2.5 bg-gray-400 rounded-full"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Calendar View (Collapsible) -->
+<div id="calendarView" class="bg-white border-b border-slate-200 px-4 py-4 overflow-hidden transition-all duration-300" style="max-height: 0;">
+    <div class="flex items-center justify-between mb-3">
+        <button onclick="changeWeek(-1)" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+            <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </button>
+        <h3 class="text-sm font-bold text-slate-800" id="weekDisplay">This Week</h3>
+        <button onclick="changeWeek(1)" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+            <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </button>
+    </div>
+    <div id="calendarGrid" class="grid grid-cols-7 gap-2">
+        <!-- Calendar days will be generated here -->
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="px-4 py-4">
+    <div class="grid grid-cols-4 gap-2">
+        <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
+            <div class="text-2xl font-bold text-blue-600" id="statsTotal">0</div>
+            <div class="text-xs text-slate-600 font-medium">Total</div>
+        </div>
+        <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
+            <div class="text-2xl font-bold text-green-600" id="statsReady">0</div>
+            <div class="text-xs text-slate-600 font-medium">Ready</div>
+        </div>
+        <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
+            <div class="text-2xl font-bold text-blue-500" id="statsActive">0</div>
+            <div class="text-xs text-slate-600 font-medium">Active</div>
+        </div>
+        <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
+            <div class="text-2xl font-bold text-purple-600" id="statsDone">0</div>
+            <div class="text-xs text-slate-600 font-medium">Done</div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<main class="px-4 pb-24">
+    <!-- Jobs List -->
+    <div id="jobsList" class="space-y-4">
+        <!-- Jobs will be dynamically inserted here -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="text-center py-12 hidden">
+        <div class="w-20 h-20 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+            <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-700 mb-2">No Jobs</h3>
+        <p class="text-sm text-slate-500">Select a different date or check upcoming jobs</p>
+    </div>
+</main>
+
+<!-- Floating Action Button -->
+<button onclick="refreshJobs()" class="floating-btn w-14 h-14 bg-gradient-to-r from-blue-600 to-blue-700 rounded-full flex items-center justify-center text-white hover:from-blue-700 hover:to-blue-800 transition-all">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+    </svg>
+</button>
+
+<!-- Notification Toast -->
+<div id="notificationToast" class="notification-toast">
+    <div class="glass-effect rounded-xl p-4 shadow-xl border-l-4 border-blue-500">
+        <div class="flex items-start space-x-3">
+            <div class="flex-shrink-0">
+                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <p id="toastMessage" class="text-sm font-medium text-slate-800"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Job Detail Modal -->
+<div id="jobModal" class="fixed inset-0 bg-black/60 modal-overlay z-50 hidden" onclick="closeModal(event)">
+    <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[85vh] overflow-y-auto slide-up" onclick="event.stopPropagation()">
+        <div class="sticky top-0 bg-white border-b border-slate-200 px-4 py-4 flex items-center justify-between rounded-t-3xl z-10">
+            <h2 class="text-xl font-bold text-slate-800" id="modalTitle">Job Details</h2>
+            <button onclick="closeJobModal()" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div id="modalContent" class="p-4">
+            <!-- Content will be dynamically inserted -->
+        </div>
+    </div>
+</div>
+
+<!-- Checklist Modal -->
+<div id="checklistModal" class="fixed inset-0 bg-black/60 modal-overlay z-50 hidden" onclick="closeChecklistModal(event)">
+    <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[90vh] overflow-y-auto slide-up" onclick="event.stopPropagation()">
+        <div class="sticky top-0 bg-white border-b border-slate-200 px-4 py-4 flex items-center justify-between rounded-t-3xl z-10">
+            <div>
+                <h2 class="text-xl font-bold text-slate-800">Completion Checklist</h2>
+                <p class="text-xs text-slate-600" id="checklistJobInfo">Room 205 - Downtown Hotel</p>
+            </div>
+            <div class="text-right">
+                <div class="text-2xl font-bold text-blue-600" id="checklistProgress">0%</div>
+                <div class="text-xs text-slate-600">Complete</div>
+            </div>
+        </div>
+        
+        <div class="p-4">
+            <div id="checklistContent" class="space-y-3">
+                <!-- Checklist items will be generated here -->
+            </div>
+            
+            <!-- Photo Upload (Optional) -->
+            <div class="mt-6 pt-6 border-t border-slate-200">
+                <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Photos (Optional)
+                </h3>
+                <label class="flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 text-slate-700 rounded-lg border-2 border-dashed border-slate-300 hover:bg-slate-200 transition-colors cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Add Photos
+                    <input type="file" accept="image/*" multiple class="hidden" onchange="handlePhotoUpload(event)">
+                </label>
+                <div id="photoPreview" class="grid grid-cols-3 gap-2 mt-3"></div>
+            </div>
+
+            <!-- Notes -->
+            <div class="mt-6">
+                <label class="block text-sm font-bold text-slate-800 mb-2">Notes (Optional)</label>
+                <textarea id="checklistNotes" rows="3" placeholder="Any issues or special notes..." class="w-full px-3 py-2 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <button onclick="completeJob()" id="completeBtn" class="w-full mt-6 px-4 py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-bold text-lg hover:from-green-700 hover:to-green-800 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Complete Job
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mock data with extended dates
+const generateJobs = () => {
+    const locations = [
+        { name: 'Downtown Hotel', address: '123 Main St, Ocean City, MD 21842' },
+        { name: 'Riverside Inn', address: '456 River Rd, Ocean City, MD 21843' },
+        { name: 'City Center Lodge', address: '789 City Ave, Ocean City, MD 21844' },
+        { name: 'Park View Resort', address: '101 Park Ln, Ocean City, MD 21845' },
+        { name: 'Marina Hotel', address: '202 Marina Dr, Ocean City, MD 21846' }
+    ];
+    
+    const jobs = [];
+    for (let i = 0; i < 20; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() + Math.floor(Math.random() * 14) - 3); // -3 to +11 days
+        const locationData = locations[Math.floor(Math.random() * locations.length)];
+        
+        jobs.push({
+            id: i + 1,
+            location: locationData.name,
+            address: locationData.address,
+            room: `${Math.floor(Math.random() * 300) + 100}`,
+            roomType: ['Standard Room', 'Deluxe Suite', 'Presidential Suite'][Math.floor(Math.random() * 3)],
+            startTime: `${8 + Math.floor(Math.random() * 8)}:00`,
+            dueTime: `${12 + Math.floor(Math.random() * 6)}:00`,
+            predictedTime: `${1 + Math.floor(Math.random() * 3)}h ${Math.floor(Math.random() * 60)}m`,
+            guestCount: Math.floor(Math.random() * 4) + 1,
+            dogCount: Math.random() > 0.7 ? 1 : 0,
+            wifiIncluded: Math.random() > 0.5,
+            linenPickup: Math.random() > 0.6,
+            guestsOut: Math.random() > 0.3,
+            priority: Math.random() > 0.8 ? 'high' : 'normal',
+            lockCode: String(Math.floor(Math.random() * 900000) + 100000),
+            wifiNetwork: 'GuestWiFi',
+            wifiPassword: 'Welcome123!',
+            bedInfo: '1 King Bed',
+            bathInfo: '1 Full Bath',
+            permanentInstructions: 'Standard deep clean protocol',
+            weekSpecificInstructions: 'Focus on bathroom deep clean',
+            linenInstructions: 'Pick up at front desk',
+            parkingSpace: `Space #${String.fromCharCode(65 + Math.floor(Math.random() * 5))}-${Math.floor(Math.random() * 20) + 1}`,
+            parkingInstructions: 'Enter through main gate',
+            date: date.toISOString().split('T')[0],
+            status: 'assigned',
+            inProgress: false
+        });
+    }
+    return jobs;
+};
+
+// Checklist items
+const CHECKLIST_ITEMS = [
+    { id: 1, text: 'All surfaces wiped and disinfected', category: 'general' },
+    { id: 2, text: 'Floors vacuumed and mopped', category: 'general' },
+    { id: 3, text: 'Bathroom cleaned and sanitized', category: 'bathroom' },
+    { id: 4, text: 'Toilet, sink, and shower scrubbed', category: 'bathroom' },
+    { id: 5, text: 'Fresh towels and linens provided', category: 'linens' },
+    { id: 6, text: 'Bed made with fresh sheets', category: 'linens' },
+    { id: 7, text: 'Trash emptied and bags replaced', category: 'general' },
+    { id: 8, text: 'Kitchen/Kitchenette cleaned', category: 'kitchen' },
+    { id: 9, text: 'Windows and mirrors cleaned', category: 'general' },
+    { id: 10, text: 'Check for damages or maintenance issues', category: 'inspection' }
+];
+
+// State
+let jobs = generateJobs();
+let selectedDate = new Date().toISOString().split('T')[0];
+let currentWeekOffset = 0;
+let locationEnabled = false;
+let watchId = null;
+let currentJobId = null;
+let uploadedPhotos = [];
+let checklistState = {};
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    generateCalendar();
+    renderJobs();
+    updateStats();
+    showToast('Welcome back! Ready to clean.', 'info');
+});
+
+// Generate calendar
+function generateCalendar() {
+    const grid = document.getElementById('calendarGrid');
+    const weekDisplay = document.getElementById('weekDisplay');
+    
+    const today = new Date();
+    today.setDate(today.getDate() + (currentWeekOffset * 7));
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    
+    const weekStart = new Date(startOfWeek);
+    const weekEnd = new Date(startOfWeek);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    
+    weekDisplay.textContent = currentWeekOffset === 0 ? 'This Week' : 
+        `${weekStart.getMonth() + 1}/${weekStart.getDate()} - ${weekEnd.getMonth() + 1}/${weekEnd.getDate()}`;
+    
+    grid.innerHTML = '';
+    const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(startOfWeek);
+        date.setDate(startOfWeek.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        const jobCount = jobs.filter(j => j.date === dateStr).length;
+        
+        const dayDiv = document.createElement('div');
+        dayDiv.className = `calendar-day relative text-center py-3 rounded-lg cursor-pointer transition-all border-2 ${
+            dateStr === selectedDate ? 'selected' : 'bg-white border-slate-200 hover:bg-slate-50'
+        } ${jobCount > 0 ? 'has-jobs' : ''}`;
+        
+        dayDiv.innerHTML = `
+            <div class="text-xs font-medium opacity-70">${days[i]}</div>
+            <div class="text-lg font-bold">${date.getDate()}</div>
+            ${jobCount > 0 ? `<div class="text-xs text-blue-600 font-semibold">${jobCount}</div>` : ''}
+        `;
+        
+        dayDiv.onclick = () => selectDate(dateStr);
+        grid.appendChild(dayDiv);
+    }
+}
+
+// Select date
+function selectDate(dateStr) {
+    selectedDate = dateStr;
+    generateCalendar();
+    renderJobs();
+    updateStats();
+}
+
+// Change week
+function changeWeek(direction) {
+    currentWeekOffset += direction;
+    generateCalendar();
+}
+
+// Toggle calendar view
+function toggleCalendarView() {
+    const calendarView = document.getElementById('calendarView');
+    const isOpen = calendarView.style.maxHeight !== '0px';
+    
+    if (isOpen) {
+        calendarView.style.maxHeight = '0px';
+    } else {
+        calendarView.style.maxHeight = '400px';
+    }
+}
+
+// Render jobs
+function renderJobs() {
+    const container = document.getElementById('jobsList');
+    const emptyState = document.getElementById('emptyState');
+    
+    const filteredJobs = jobs.filter(job => job.date === selectedDate);
+
+    if (filteredJobs.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+    }
+
+    emptyState.classList.add('hidden');
+    container.innerHTML = filteredJobs.map(job => createJobCard(job)).join('');
+}
+
+// Create job card
+function createJobCard(job) {
+    let statusClass, statusText, statusIcon;
+    
+    if (job.inProgress) {
+        statusClass = 'status-in-progress';
+        statusText = '🔄 CLEANING IN PROGRESS';
+        statusIcon = '🔄';
+    } else if (job.guestsOut) {
+        statusClass = 'status-ready';
+        statusText = '✓ READY TO CLEAN';
+        statusIcon = '✓';
+    } else {
+        statusClass = 'status-waiting';
+        statusText = '⏳ GUESTS STILL IN';
+        statusIcon = '⏳';
+    }
+    
+    const priorityBadge = job.priority === 'high' ? `
+        <span class="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full border border-red-200">
+            URGENT
+        </span>
+    ` : '';
+
+    return `
+        <div class="job-card bg-white rounded-2xl shadow-lg border-2 border-slate-100 overflow-hidden" onclick="openJobModal(${job.id})">
+            <div class="${statusClass} px-4 py-3 text-center font-bold text-sm">
+                ${statusText}
+            </div>
+            
+            <div class="p-4">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h3 class="text-xl font-bold text-slate-800">Room ${job.room}</h3>
+                            ${priorityBadge}
+                        </div>
+                        <p class="text-sm text-slate-600 font-medium">${job.roomType}</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl">${statusIcon}</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 mb-3 text-slate-700">
+                    <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="<parameter name="old_str">                <button onclick="removePhoto(${uploadedPhotos.length - 1})" class="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            `;
+            preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Remove photo
+function removePhoto(index) {
+    uploadedPhotos.splice(index, 1);
+    const preview = document.getElementById('photoPreview');
+    preview.children[index].remove();
+}
+
+// Complete job
+function completeJob() {
+    const job = jobs.find(j => j.id === currentJobId);
+    if (!job) return;
+
+    const notes = document.getElementById('checklistNotes').value;
+    
+    // Mark job as completed
+    job.status = 'completed';
+    job.inProgress = false;
+    job.completedAt = new Date().toISOString();
+    job.completionNotes = notes;
+    job.completionPhotos = uploadedPhotos.length;
+    
+    showToast('🎉 Job completed successfully!', 'success');
+    closeChecklistModal();
+    renderJobs();
+    updateStats();
+    
+    // Show success animation
+    setTimeout(() => {
+        showToast(`Great work! Room ${job.room} is done.`, 'success');
+    }, 1000);
+}
+
+// Close checklist modal
+function closeChecklistModal(event) {
+    if (event && event.target.id !== 'checklistModal') return;
+    
+    const modal = document.getElementById('checklistModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Close job modal
+function closeJobModal() {
+    const modal = document.getElementById('jobModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal on backdrop click
+function closeModal(event) {
+    if (event.target.id === 'jobModal') {
+        closeJobModal();
+    } else if (event.target.id === 'checklistModal') {
+        closeChecklistModal(event);
+    }
+}
+
+// Update stats
+function updateStats() {
+    const selectedDateJobs = jobs.filter(j => j.date === selectedDate);
+    
+    document.getElementById('statsTotal').textContent = selectedDateJobs.length;
+    document.getElementById('statsReady').textContent = selectedDateJobs.filter(j => j.guestsOut && !j.inProgress && j.status !== 'completed').length;
+    document.getElementById('statsActive').textContent = selectedDateJobs.filter(j => j.inProgress).length;
+    document.getElementById('statsDone').textContent = selectedDateJobs.filter(j => j.status === 'completed').length;
+}
+
+// Toggle location
+function toggleLocation() {
+    if (!locationEnabled) {
+        startLocationTracking();
+    } else {
+        stopLocationTracking();
+    }
+}
+
+// Start location tracking
+function startLocationTracking() {
+    if (!navigator.geolocation) {
+        showToast('Geolocation not supported', 'error');
+        return;
+    }
+
+    locationEnabled = true;
+    document.getElementById('locationDot').className = 'absolute top-1 right-1 w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse';
+    
+    watchId = navigator.geolocation.watchPosition(
+        (position) => {
+            console.log('Location updated:', position.coords.latitude, position.coords.longitude);
+            // In real app, send to server
+        },
+        (error) => {
+            console.error('Location error:', error);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 30000
+        }
+    );
+
+    showToast('📍 Location sharing enabled', 'success');
+}
+
+// Stop location tracking
+function stopLocationTracking() {
+    locationEnabled = false;
+    document.getElementById('locationDot').className = 'absolute top-1 right-1 w-2.5 h-2.5 bg-gray-400 rounded-full';
+    
+    if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+    }
+
+    showToast('Location sharing disabled', 'info');
+}
+
+// Navigate to job
+function navigate(jobId) {
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    const address = encodeURIComponent(job.address);
+    const mapsUrl = /iPhone|iPad|iPod/.test(navigator.userAgent)
+        ? `maps://maps.google.com/maps?daddr=${address}`
+        : `https://www.google.com/maps/dir/?api=1&destination=${address}`;
+    
+    window.open(mapsUrl, '_blank');
+    showToast('Opening navigation...', 'info');
+}
+
+// Call property
+function callProperty(jobId) {
+    showToast('Calling property manager...', 'info');
+    setTimeout(() => {
+        window.location.href = 'tel:+14431234567';
+    }, 500);
+}
+
+// Refresh jobs
+function refreshJobs() {
+    showToast('Refreshing job list...', 'info');
+    
+    setTimeout(() => {
+        // Simulate receiving updates from server
+        renderJobs();
+        updateStats();
+        generateCalendar();
+        showToast('✓ Jobs updated!', 'success');
+    }, 1000);
+}
+
+// Show toast notification
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('notificationToast');
+    const toastMessage = document.getElementById('toastMessage');
+    
+    const colors = {
+        success: 'border-green-500',
+        error: 'border-red-500',
+        warning: 'border-yellow-500',
+        info: 'border-blue-500'
+    };
+
+    const icons = {
+        success: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>`,
+        error: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>`,
+        warning: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>`,
+        info: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>`
+    };
+
+    toast.querySelector('.glass-effect').className = `glass-effect rounded-xl p-4 shadow-xl border-l-4 ${colors[type] || colors.info}`;
+    toast.querySelector('svg path').setAttribute('d', icons[type] || icons.info);
+    toastMessage.textContent = message;
+
+    toast.classList.add('show');
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+// Prevent back button on modals
+window.addEventListener('popstate', () => {
+    if (!document.getElementById('jobModal').classList.contains('hidden')) {
+        closeJobModal();
+    } else if (!document.getElementById('checklistModal').classList.contains('hidden')) {
+        closeChecklistModal();
+    }
+});
+
+// Auto-refresh jobs every 30 seconds
+setInterval(() => {
+    // Simulate real-time updates
+    jobs.forEach(job => {
+        // Randomly update guest status (simulating office updates)
+        if (Math.random() > 0.95 && !job.guestsOut && !job.inProgress) {
+            job.guestsOut = true;
+            if (job.date === selectedDate) {
+                showToast(`🎉 Room ${job.room} is now ready!`, 'success');
+                renderJobs();
+                updateStats();
+            }
+        }
+    });
+}, 30000);
 </script>
 
 </body>
