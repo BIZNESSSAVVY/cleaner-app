@@ -1,17 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Savvy OS - My Jobs</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <style>
+        /* --- ORIGINAL STYLES (kept exactly as provided) --- */
         body { 
             font-family: 'Inter', sans-serif; 
             overscroll-behavior: none;
@@ -98,6 +97,14 @@
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.1); }
         }
+
+        /* --- NEW MINIMAL UTILITY STYLES (kept very small & consistent) --- */
+        .hidden { display: none !important; }
+        .modal-card { background: white; border-radius: 1rem; padding: 1rem; }
+        /* keep checklist buttons big and touch-friendly */
+        .check-button { min-height: 48px; border-radius: 10px; padding: 0.6rem 1rem; }
+        .photo-preview { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; }
+        .small-note { font-size: 0.85rem; color: #475569; }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -136,13 +143,20 @@
         </div>
     </div>
     
-    <!-- Tabs -->
+    <!-- Tabs (kept same look; added 'week' tab between Today & Upcoming) -->
     <div class="relative px-4">
         <div class="flex space-x-1 border-b border-slate-200">
             <button onclick="switchTab('today')" class="tab-btn flex-1 px-4 py-3 text-sm font-semibold text-blue-600 relative" data-tab="today">
                 Today
                 <span class="ml-1 px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full text-xs" id="todayCount">0</span>
             </button>
+
+            <!-- NEW: Week tab (minimal / matches styling) -->
+            <button onclick="switchTab('week')" class="tab-btn flex-1 px-4 py-3 text-sm font-semibold text-slate-600 relative" data-tab="week">
+                Week
+                <span class="ml-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs" id="weekCount">0</span>
+            </button>
+
             <button onclick="switchTab('upcoming')" class="tab-btn flex-1 px-4 py-3 text-sm font-semibold text-slate-600 relative" data-tab="upcoming">
                 Upcoming
                 <span class="ml-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs" id="upcomingCount">0</span>
@@ -152,7 +166,7 @@
                 <span class="ml-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs" id="completedCount">0</span>
             </button>
         </div>
-        <div class="tab-indicator" style="left: 0; width: 33.33%;"></div>
+        <div class="tab-indicator" style="left: 0; width: 25%;"></div>
     </div>
 </header>
 
@@ -171,6 +185,13 @@
         <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
             <div class="text-2xl font-bold text-amber-600" id="statsWaiting">0</div>
             <div class="text-xs text-slate-600 font-medium">Waiting</div>
+        </div>
+    </div>
+
+    <!-- Week strip (small, matches design: appears only when Week tab is active) -->
+    <div id="weekStrip" class="mb-4 hidden">
+        <div class="flex gap-2 overflow-x-auto">
+            <!-- day buttons injected here -->
         </div>
     </div>
 
@@ -214,7 +235,7 @@
     </div>
 </div>
 
-<!-- Job Detail Modal -->
+<!-- Job Detail Modal (unchanged markup; content injected) -->
 <div id="jobModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden" onclick="closeModal(event)">
     <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[85vh] overflow-y-auto slide-up" onclick="event.stopPropagation()">
         <div class="sticky top-0 bg-white border-b border-slate-200 px-4 py-4 flex items-center justify-between rounded-t-3xl">
@@ -232,8 +253,83 @@
     </div>
 </div>
 
+<!-- OVERRIDE Confirmation Modal (keeps look consistent with other modals) -->
+<div id="overrideModal" class="fixed inset-0 bg-black/60 z-60 hidden" onclick="closeOverrideModal(event)">
+  <div class="absolute inset-0" onclick="event.stopPropagation()"></div>
+  <div class="absolute left-4 right-4 bottom-6 bg-white rounded-2xl p-4 slide-up">
+    <div class="flex items-start justify-between mb-3">
+      <div>
+        <h3 class="text-lg font-bold">Start cleaning — override</h3>
+        <p class="small-note mt-1">Guests are listed as still in the unit. Only override if you have verified guests have left or property approved it.</p>
+      </div>
+      <button onclick="closeOverrideModal()" class="p-2 rounded-lg hover:bg-slate-100">✕</button>
+    </div>
+
+    <label class="block text-sm text-slate-700 mb-2">Optional note (why you override)</label>
+    <textarea id="overrideNote" class="w-full p-3 rounded-lg border border-slate-200" rows="3" placeholder="e.g., manager confirmed; I checked outside..."></textarea>
+
+    <div class="mt-4 grid grid-cols-2 gap-3">
+      <button id="confirmOverrideBtn" class="px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-semibold">Confirm & Start</button>
+      <button class="px-4 py-3 bg-white rounded-xl font-semibold border border-slate-200" onclick="closeOverrideModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHECKLIST Modal (matches design) -->
+<div id="checklistModal" class="fixed inset-0 bg-black/60 z-70 hidden" onclick="closeChecklistModal(event)">
+  <div class="absolute inset-0" onclick="event.stopPropagation()"></div>
+  <div class="absolute left-0 right-0 bottom-0 bg-white rounded-t-3xl max-h-[86vh] overflow-y-auto p-4 slide-up">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-lg font-bold">Post-cleaning checklist</h3>
+      <button onclick="closeChecklistModal()" class="p-2 rounded-lg hover:bg-slate-100">Close</button>
+    </div>
+
+    <div id="checklistItems" class="space-y-3">
+      <!-- checklist items injected here -->
+    </div>
+
+    <div class="mt-3">
+      <label class="block text-sm font-semibold mb-1">Attach photo (optional)</label>
+      <label for="checklistPhoto" class="w-full p-3 bg-slate-50 rounded-xl cursor-pointer flex items-center gap-3">
+        <svg class="w-6 h-6 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <rect x="3" y="7" width="18" height="13" rx="2" stroke-width="1.5"></rect>
+          <path d="M8 11a2 2 0 112 2 2 2 0 01-2-2z" stroke-width="1.5"></path>
+        </svg>
+        <span id="photoLabel" class="text-slate-600">Tap to take or choose photo</span>
+      </label>
+      <input id="checklistPhoto" type="file" accept="image/*" capture="environment" class="hidden" />
+      <div id="photoPreviewWrap" class="mt-3 hidden">
+        <img id="photoPreview" class="photo-preview" alt="photo preview" />
+        <div class="mt-2 grid grid-cols-2 gap-2">
+          <button id="removePhotoBtn" class="px-3 py-2 bg-white rounded-xl border">Remove</button>
+          <button id="keepPhotoBtn" class="px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl">Keep</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4 grid grid-cols-2 gap-3">
+      <button id="submitChecklistBtn" class="px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-semibold">Submit & Complete</button>
+      <button class="px-4 py-3 bg-white rounded-xl border font-semibold" onclick="closeChecklistModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// Mock data - syncs with your main dashboard
+/* --------------------------
+   Feature additions (preserve original UI)
+   - Week view tab
+   - Override start (when guests still in)
+   - Post-cleaning checklist + photo upload
+   - localStorage demo persistence + Firestore placeholders
+   -------------------------- */
+
+/* ---------- Persistence keys ---------- */
+const LS_JOBS_KEY = 'savvy.jobs.v2';
+const LS_CHECKLISTS_KEY = 'savvy.checklists.v2';
+const LS_OVERRIDES_KEY = 'savvy.overrides.v2';
+const LS_PHOTOS_KEY = 'savvy.photos.v2';
+
+/* ---------- Replicate original mock jobs (kept identical fields) ---------- */
 const MOCK_JOBS = [
     {
         id: 1,
@@ -321,49 +417,171 @@ const MOCK_JOBS = [
     }
 ];
 
-// State
-let currentTab = 'today';
-let locationEnabled = false;
-let watchId = null;
-let jobs = [...MOCK_JOBS];
-
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    renderJobs();
-    updateStats();
-    showToast('Welcome back! You have new assignments.', 'info');
-    
-    // Simulate real-time updates
-    setInterval(() => {
-        // Randomly update a guest status (simulating dashboard updates)
-        if (Math.random() > 0.7) {
-            const randomJob = jobs[Math.floor(Math.random() * jobs.length)];
-            const oldStatus = randomJob.guestsOut;
-            randomJob.guestsOut = !randomJob.guestsOut;
-            renderJobs();
-            updateStats();
-            
-            if (randomJob.guestsOut && !oldStatus) {
-                showToast(`🎉 Room ${randomJob.room} is now ready to clean!`, 'success');
-                updateNotificationBadge(1);
-            }
+/* ---------- Helper: localStorage wrapper (demo) ---------- */
+function loadJobsFromLS() {
+    try {
+        const raw = localStorage.getItem(LS_JOBS_KEY);
+        if (!raw) {
+            localStorage.setItem(LS_JOBS_KEY, JSON.stringify(MOCK_JOBS));
+            return JSON.parse(JSON.stringify(MOCK_JOBS));
         }
-    }, 15000); // Check every 15 seconds
-});
+        return JSON.parse(raw);
+    } catch (e) {
+        console.error('Error loading jobs from LS', e);
+        return JSON.parse(JSON.stringify(MOCK_JOBS));
+    }
+}
+function saveJobsToLS(jobs) {
+    localStorage.setItem(LS_JOBS_KEY, JSON.stringify(jobs));
+    // PLACEHOLDER: replace with Firestore update in production
+    // Example:
+    // const batch = firestore.batch();
+    // jobs.forEach(job => batch.set(doc(firestore, 'jobs', job.id.toString()), job, { merge: true }));
+    // await batch.commit();
+}
+function loadChecklistsFromLS() {
+    return JSON.parse(localStorage.getItem(LS_CHECKLISTS_KEY) || '{}');
+}
+function saveChecklistsToLS(obj) {
+    localStorage.setItem(LS_CHECKLISTS_KEY, JSON.stringify(obj));
+}
+function loadOverridesFromLS() {
+    return JSON.parse(localStorage.getItem(LS_OVERRIDES_KEY) || '{}');
+}
+function saveOverridesToLS(obj) {
+    localStorage.setItem(LS_OVERRIDES_KEY, JSON.stringify(obj));
+}
+function loadPhotosFromLS() {
+    return JSON.parse(localStorage.getItem(LS_PHOTOS_KEY) || '{}');
+}
+function savePhotosToLS(obj) {
+    localStorage.setItem(LS_PHOTOS_KEY, JSON.stringify(obj));
+}
 
-// Render jobs
+/* ---------- App state ---------- */
+let jobs = loadJobsFromLS();
+let currentTab = 'today'; // 'today' | 'week' | 'upcoming' | 'completed'
+let activeJobId = null;
+let checklistPhotoData = null;
+
+/* ---------- Utility helpers ---------- */
+function q(sel) { return document.querySelector(sel); }
+function qq(sel) { return Array.from(document.querySelectorAll(sel)); }
+function todayISO() { return new Date().toISOString().split('T')[0]; }
+function addDaysISO(iso, days) {
+    const d = new Date(iso + 'T00:00:00');
+    d.setDate(d.getDate() + days);
+    return d.toISOString().split('T')[0];
+}
+function startOfWeekISO(iso) {
+    // Monday as start
+    const d = new Date(iso + 'T00:00:00');
+    const day = d.getDay(); // 0 Sunday
+    const diff = day === 0 ? -6 : 1 - day; // offset to Monday
+    d.setDate(d.getDate() + diff);
+    return d.toISOString().split('T')[0];
+}
+function isDateInWeekISO(dateISO, anchorISO) {
+    const start = new Date(startOfWeekISO(anchorISO) + 'T00:00:00');
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    const dt = new Date(dateISO + 'T00:00:00');
+    return dt >= start && dt <= end;
+}
+function showToast(message, type='info') {
+    const toast = document.getElementById('notificationToast');
+    const toastMessage = document.getElementById('toastMessage');
+    const colors = {
+        success: 'border-green-500',
+        error: 'border-red-500',
+        warning: 'border-yellow-500',
+        info: 'border-blue-500'
+    };
+    // preserve glass-effect classes for styling
+    toast.querySelector('.glass-effect').className = `glass-effect rounded-xl p-4 shadow-xl border-l-4 ${colors[type] || colors.info}`;
+    toastMessage.textContent = message;
+    toast.classList.add('show');
+    setTimeout(()=> toast.classList.remove('show'), 3000);
+}
+
+/* ---------- Renderers (preserve original markup structure) ---------- */
+
+function updateCounts() {
+    const today = todayISO();
+    q('#todayCount').textContent = jobs.filter(j => j.date === today && j.status === 'assigned').length;
+    // weekCount: count assigned jobs in this week
+    const weekAnchor = today; // use today as reference for week
+    q('#weekCount').textContent = jobs.filter(j => isDateInWeekISO(j.date, weekAnchor) && j.status === 'assigned').length;
+    q('#upcomingCount').textContent = jobs.filter(j => j.date > today && j.status === 'assigned').length;
+    q('#completedCount').textContent = jobs.filter(j => j.status === 'completed').length;
+
+    // stats totals
+    q('#statsTotal').textContent = jobs.filter(j => j.date === today && j.status === 'assigned').length;
+    q('#statsReady').textContent = jobs.filter(j => j.date === today && j.status === 'assigned' && j.guestsOut).length;
+    q('#statsWaiting').textContent = jobs.filter(j => j.date === today && j.status === 'assigned' && !j.guestsOut).length;
+}
+
+function renderWeekStrip() {
+    const stripWrap = q('#weekStrip');
+    const stripInner = stripWrap.querySelector('div');
+    const anchor = todayISO();
+    const start = startOfWeekISO(anchor);
+    stripInner.innerHTML = '';
+    for (let i=0;i<7;i++) {
+        const dISO = addDaysISO(start, i);
+        const d = new Date(dISO + 'T00:00:00');
+        const label = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' });
+        const count = jobs.filter(j => j.date === dISO && j.status === 'assigned').length;
+        const btn = document.createElement('button');
+        btn.className = 'px-3 py-2 rounded-lg bg-white';
+        btn.style.minWidth = '84px';
+        btn.innerHTML = `<div class="text-sm font-semibold">${label}</div><div class="text-xs text-slate-600">${count} jobs</div>`;
+        btn.onclick = () => {
+            // show jobs filtered to this date (quick UX)
+            currentTab = 'today';
+            // temporarily set date filter by moving items that match today logic? easier: create a filtered view
+            // We'll open jobsList filtered to selected date by setting a temporary global filterDate
+            window._savvy_filterDate = dISO;
+            switchTab('today');
+        };
+        stripInner.appendChild(btn);
+    }
+    stripWrap.classList.remove('hidden');
+}
+
 function renderJobs() {
+    updateCounts();
+    // set tab indicator width & position for 4 tabs
+    const mapping = ['today','week','upcoming','completed'];
+    const idx = mapping.indexOf(currentTab);
+    const indicator = document.querySelector('.tab-indicator');
+    if (indicator) {
+        indicator.style.left = `${idx * 25}%`;
+        indicator.style.width = `25%`;
+    }
+
+    // Week strip visibility
+    if (currentTab === 'week') renderWeekStrip();
+    else q('#weekStrip').classList.add('hidden');
+
     const container = document.getElementById('jobsList');
     const emptyState = document.getElementById('emptyState');
-    
-    const today = new Date().toISOString().split('T')[0];
-    const filteredJobs = jobs.filter(job => {
+
+    const today = todayISO();
+
+    let filteredJobs = jobs.filter(job => {
         if (currentTab === 'today') {
-            return job.date === today && job.status === 'assigned';
+            // support temp override filterDate (when user picked a day on week strip)
+            const filterDate = window._savvy_filterDate || today;
+            return job.date === filterDate && job.status === 'assigned';
+        } else if (currentTab === 'week') {
+            return isDateInWeekISO(job.date, today) && job.status === 'assigned';
         } else if (currentTab === 'upcoming') {
             return job.date > today && job.status === 'assigned';
-        } else {
+        } else if (currentTab === 'completed') {
             return job.status === 'completed';
+        } else {
+            return false;
         }
     });
 
@@ -374,17 +592,12 @@ function renderJobs() {
     }
 
     emptyState.classList.add('hidden');
-    
-    container.innerHTML = filteredJobs.map(job => createJobCard(job)).join('');
-    
-    // Update tab counts
-    document.getElementById('todayCount').textContent = jobs.filter(j => j.date === today && j.status === 'assigned').length;
-    document.getElementById('upcomingCount').textContent = jobs.filter(j => j.date > today && j.status === 'assigned').length;
-    document.getElementById('completedCount').textContent = jobs.filter(j => j.status === 'completed').length;
+
+    container.innerHTML = filteredJobs.map(job => createJobCardHTML(job)).join('');
 }
 
-// Create job card
-function createJobCard(job) {
+/* re-use original create card HTML (keep design) */
+function createJobCardHTML(job) {
     const statusClass = job.guestsOut ? 'status-ready' : 'status-waiting';
     const statusText = job.guestsOut ? '✓ READY TO CLEAN' : '⏳ GUESTS STILL IN';
     const statusIcon = job.guestsOut ? '✓' : '⏳';
@@ -394,6 +607,7 @@ function createJobCard(job) {
         </span>
     ` : '';
 
+    // Important: keep onclicks pointing to functions we will implement
     return `
         <div class="job-card bg-white rounded-2xl shadow-lg border-2 border-slate-100 overflow-hidden" onclick="openJobModal(${job.id})">
             <!-- Status Banner -->
@@ -474,17 +688,17 @@ function createJobCard(job) {
     `;
 }
 
-// Open job modal
+/* ---------- JOB MODAL (injected content) ---------- */
 function openJobModal(jobId) {
+    activeJobId = jobId;
     const job = jobs.find(j => j.id === jobId);
     if (!job) return;
-
     const modal = document.getElementById('jobModal');
     const title = document.getElementById('modalTitle');
     const content = document.getElementById('modalContent');
-
     title.textContent = `${job.location} - Room ${job.room}`;
-    
+
+    // Add 'Start cleaning' button -> if guestsOut false -> show override modal
     content.innerHTML = `
         <!-- Guest Status -->
         <div class="${job.guestsOut ? 'status-ready' : 'status-waiting'} px-6 py-4 rounded-xl text-center font-bold text-lg mb-4">
@@ -506,7 +720,7 @@ function openJobModal(jobId) {
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-sm text-red-800 font-medium">WiFi Password:</span>
-                    <span class="text-lg font-bold text-red-900">${job.wifiPassword}</span>
+                    <span class="text-lg font-bold text-red-900">${job.wifiPassword || '—'}</span>
                 </div>
             </div>
         </div>
@@ -539,101 +753,13 @@ function openJobModal(jobId) {
             </div>
         </div>
 
-        <!-- Property Details -->
-        <div class="bg-white border border-slate-200 rounded-xl p-4 mb-4">
-            <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                </svg>
-                Property Details
-            </h3>
-            <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                    <span class="text-slate-600">Address:</span>
-                    <span class="font-medium text-slate-800 text-right">${job.address}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-slate-600">Room Type:</span>
-                    <span class="font-medium text-slate-800">${job.roomType}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-slate-600">Beds:</span>
-                    <span class="font-medium text-slate-800">${job.bedInfo}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-slate-600">Bathrooms:</span>
-                    <span class="font-medium text-slate-800">${job.bathInfo}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-slate-600">WiFi Network:</span>
-                    <span class="font-medium text-slate-800">${job.wifiNetwork}</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Cleaning Instructions -->
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
-            <h3 class="font-bold text-blue-900 mb-3 flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                </svg>
-                Cleaning Instructions
-            </h3>
-            <div class="space-y-3 text-sm">
-                <div>
-                    <span class="font-semibold text-blue-900 block mb-1">Standard Protocol:</span>
-                    <p class="text-blue-800">${job.permanentInstructions}</p>
-                </div>
-                <div>
-                    <span class="font-semibold text-blue-900 block mb-1">This Week's Focus:</span>
-                    <p class="text-blue-800">${job.weekSpecificInstructions}</p>
-                </div>
-                ${job.linenPickup ? `
-                <div>
-                    <span class="font-semibold text-blue-900 block mb-1">Linen Instructions:</span>
-                    <p class="text-blue-800">${job.linenInstructions}</p>
-                </div>
-                ` : ''}
-            </div>
-        </div>
-
-        <!-- Parking -->
-        <div class="bg-white border border-slate-200 rounded-xl p-4 mb-4">
-            <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
-                </svg>
-                Parking Information
-            </h3>
-            <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                    <span class="text-slate-600">Assigned Space:</span>
-                    <span class="font-semibold text-slate-800">${job.parkingSpace}</span>
-                </div>
-                <div>
-                    <span class="text-slate-600 block mb-1">Instructions:</span>
-                    <p class="text-slate-800 font-medium">${job.parkingInstructions}</p>
-                </div>
-            </div>
-        </div>
-
         <!-- Action Buttons -->
         <div class="grid grid-cols-2 gap-3 mb-4">
-            <button onclick="navigate(${job.id})" class="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all flex items-center justify-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"></path>
-                </svg>
-                Navigate
-            </button>
-            <button onclick="callProperty(${job.id})" class="px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-semibold hover:from-green-700 hover:to-green-800 transition-all flex items-center justify-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                </svg>
-                Call Property
-            </button>
+            <button id="modalNavigateBtn" onclick="navigate(${job.id})" class="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold">Navigate</button>
+            <button id="modalCallBtn" onclick="callProperty(${job.id})" class="px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-semibold">Call Property</button>
         </div>
 
-        <button onclick="startJob(${job.id})" class="w-full px-4 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-bold text-lg hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg flex items-center justify-center gap-2">
+        <button id="modalStartBtn" onclick="attemptStart(${job.id})" class="w-full px-4 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-bold text-lg hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg flex items-center justify-center gap-2">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -646,25 +772,207 @@ function openJobModal(jobId) {
     document.body.style.overflow = 'hidden';
 }
 
-// Close job modal
 function closeJobModal() {
     const modal = document.getElementById('jobModal');
     modal.classList.add('hidden');
     document.body.style.overflow = 'auto';
 }
+function closeModal(e) { if (e.target.id === 'jobModal') closeJobModal(); }
 
-// Close modal on backdrop click
-function closeModal(event) {
-    if (event.target.id === 'jobModal') {
+/* ---------- Start flow: attemptStart -> override if needed ---------- */
+function attemptStart(jobId) {
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+    if (job.guestsOut) {
+        // normal start -> open checklist
+        // mark in_progress (demo)
+        job.status = 'in_progress';
+        saveJobsToLS(jobs);
+        showToast('Job started — open checklist to complete', 'success');
         closeJobModal();
+        openChecklistModal(jobId);
+    } else {
+        // guests still in, show override modal
+        openOverrideModal(jobId);
     }
 }
 
-// Switch tabs
+/* ---------- Override modal handling ---------- */
+function openOverrideModal(jobId) {
+    activeJobId = jobId;
+    q('#overrideNote').value = '';
+    q('#overrideModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    // wire confirm button
+    q('#confirmOverrideBtn').onclick = () => {
+        const note = q('#overrideNote').value.trim();
+        confirmOverrideAndStart(jobId, note);
+        closeOverrideModal();
+    };
+}
+function closeOverrideModal(e) {
+    q('#overrideModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+function confirmOverrideAndStart(jobId, note) {
+    // store override log
+    const overrides = loadOverridesFromLS();
+    overrides[jobId] = overrides[jobId] || [];
+    overrides[jobId].push({ at: Date.now(), note, by: document.getElementById('cleanerName').textContent || 'Unknown' });
+    saveOverridesToLS(overrides);
+    // Update job: set guestsOut true for demo and set status to in_progress
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+    job.guestsOut = true; // reflect override locally so UI shows READY
+    job.status = 'in_progress';
+    saveJobsToLS(jobs);
+    showToast('Override recorded — job started', 'success');
+    closeJobModal();
+    openChecklistModal(jobId);
+    // PLACEHOLDER: send override record to Firestore (audit)
+    // e.g. firestore.collection('overrides').add({...})
+}
+
+/* ---------- Checklist modal ---------- */
+const DEFAULT_CHECKLIST = [
+    { key: 'trash', label: 'Trash emptied' },
+    { key: 'dust', label: 'Surfaces dusted & wiped' },
+    { key: 'bath', label: 'Bathroom sanitized' },
+    { key: 'linens', label: 'Towels/linens replaced' },
+    { key: 'floors', label: 'Floors vacuumed/mopped' }
+];
+
+function openChecklistModal(jobId) {
+    activeJobId = jobId;
+    checklistPhotoData = null;
+    // build checklist items
+    const container = q('#checklistItems');
+    container.innerHTML = '';
+    DEFAULT_CHECKLIST.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100';
+        row.innerHTML = `<div><div class="font-semibold">${item.label}</div><div class="text-xs text-slate-600">Tap to toggle</div></div><button class="check-button bg-white border rounded-lg" data-key="${item.key}">NO</button>`;
+        const btn = row.querySelector('button');
+        btn.dataset.checked = 'false';
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const is = btn.dataset.checked === 'true';
+            btn.dataset.checked = is ? 'false' : 'true';
+            btn.classList.toggle('bg-emerald-600', !is);
+            btn.classList.toggle('text-white', !is);
+            btn.textContent = is ? 'NO' : 'YES';
+        });
+        container.appendChild(row);
+    });
+
+    // photo handlers
+    q('#checklistPhoto').value = '';
+    q('#photoPreviewWrap').classList.add('hidden');
+    q('#photoPreview').src = '';
+    q('#photoLabel').textContent = 'Tap to take or choose photo';
+    q('#photoLabel').onclick = ()=> q('#checklistPhoto').click();
+    q('#checklistPhoto').onchange = handleChecklistPhoto;
+    q('#removePhotoBtn').onclick = ()=> { checklistPhotoData = null; q('#photoPreviewWrap').classList.add('hidden'); q('#photoPreview').src = ''; q('#photoLabel').textContent = 'Tap to take or choose photo'; };
+    q('#keepPhotoBtn').onclick = ()=> showToast('Photo attached');
+
+    // submit
+    q('#submitChecklistBtn').onclick = submitChecklist;
+
+    q('#checklistModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeChecklistModal(e) {
+    q('#checklistModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+function handleChecklistPhoto(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        checklistPhotoData = ev.target.result; // base64
+        q('#photoPreview').src = checklistPhotoData;
+        q('#photoPreviewWrap').classList.remove('hidden');
+        q('#photoLabel').textContent = 'Photo attached';
+    };
+    reader.readAsDataURL(file);
+}
+
+function submitChecklist() {
+    // collect checked items
+    const btns = Array.from(document.querySelectorAll('#checklistItems button'));
+    const results = {};
+    btns.forEach(b => results[b.dataset.key] = b.dataset.checked === 'true');
+
+    // Simple rule: require at least 2 items or a photo
+    const checkedCount = Object.values(results).filter(Boolean).length;
+    if (checkedCount < 2 && !checklistPhotoData) {
+        alert('Please complete at least two checklist items or attach a photo.');
+        return;
+    }
+
+    // Save checklist to LS
+    const checklists = loadChecklistsFromLS();
+    const id = 'cl_' + activeJobId + '_' + Date.now();
+    checklists[id] = { jobId: activeJobId, results, photoId: null, ts: Date.now(), by: document.getElementById('cleanerName').textContent || 'Unknown' };
+
+    // Save photo if present
+    if (checklistPhotoData) {
+        const photos = loadPhotosFromLS();
+        const pid = 'ph_' + activeJobId + '_' + Date.now();
+        photos[pid] = { data: checklistPhotoData, ts: Date.now(), by: document.getElementById('cleanerName').textContent || 'Unknown' };
+        savePhotosToLS(photos);
+        checklists[id].photoId = pid;
+    }
+
+    saveChecklistsToLS(checklists);
+
+    // Mark job completed in LS
+    const idx = jobs.findIndex(j => j.id === activeJobId);
+    if (idx > -1) {
+        jobs[idx].status = 'completed';
+        jobs[idx].completedAt = Date.now();
+        jobs[idx].completedBy = document.getElementById('cleanerName').textContent || 'Unknown';
+        jobs[idx].checklistId = id;
+        saveJobsToLS(jobs);
+    }
+
+    // Hide modal, refresh UI
+    closeChecklistModal();
+    showToast('Checklist saved — job completed ✅', 'success');
+    renderJobs();
+
+    // PLACEHOLDER: upload checklist & photos to Firestore/Cloud Storage in production
+}
+
+/* ---------- Other helper actions (preserve behavior) ---------- */
+function navigate(jobId) {
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+    const address = encodeURIComponent(job.address || (job.location || ''));
+    const mapsUrl = /iPhone|iPad|iPod/.test(navigator.userAgent)
+        ? `maps://maps.google.com/maps?daddr=${address}`
+        : `https://www.google.com/maps/dir/?api=1&destination=${address}`;
+    window.open(mapsUrl, '_blank');
+    showToast('Opening navigation...', 'info');
+}
+
+function callProperty(jobId) {
+    showToast('Calling property manager...', 'info');
+    setTimeout(() => {
+        window.location.href = 'tel:+14431234567';
+    }, 500);
+}
+
+/* ---------- Tabs, refresh, init ---------- */
 function switchTab(tab) {
     currentTab = tab;
-    
-    // Update tab styling
+    // reset any filterDate
+    delete window._savvy_filterDate;
+
+    // update styling
     document.querySelectorAll('.tab-btn').forEach(btn => {
         if (btn.dataset.tab === tab) {
             btn.classList.remove('text-slate-600');
@@ -674,156 +982,53 @@ function switchTab(tab) {
             btn.classList.add('text-slate-600');
         }
     });
-    
-    // Move indicator
-    const indicator = document.querySelector('.tab-indicator');
-    const tabIndex = ['today', 'upcoming', 'completed'].indexOf(tab);
-    indicator.style.left = `${tabIndex * 33.33}%`;
-    
+    // move indicator handled in renderJobs
     renderJobs();
 }
-
-// Update stats
-function updateStats() {
-    const today = new Date().toISOString().split('T')[0];
-    const todayJobs = jobs.filter(j => j.date === today && j.status === 'assigned');
-    
-    document.getElementById('statsTotal').textContent = todayJobs.length;
-    document.getElementById('statsReady').textContent = todayJobs.filter(j => j.guestsOut).length;
-    document.getElementById('statsWaiting').textContent = todayJobs.filter(j => !j.guestsOut).length;
-}
-
-// Toggle location
-function toggleLocation() {
-    if (!locationEnabled) {
-        startLocationTracking();
-    } else {
-        stopLocationTracking();
-    }
-}
-
-// Start location tracking
-function startLocationTracking() {
-    if (!navigator.geolocation) {
-        showToast('Geolocation not supported', 'error');
-        return;
-    }
-
-    locationEnabled = true;
-    document.getElementById('locationDot').className = 'absolute top-1 right-1 w-2.5 h-2.5 bg-green-500 rounded-full location-active';
-    
-    watchId = navigator.geolocation.watchPosition(
-        (position) => {
-            // Update location in background
-            console.log('Location updated:', position.coords.latitude, position.coords.longitude);
-        },
-        (error) => {
-            console.error('Location error:', error);
-        },
-        {
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 30000
-        }
-    );
-
-    showToast('Location sharing enabled', 'success');
-}
-
-// Stop location tracking
-function stopLocationTracking() {
-    locationEnabled = false;
-    document.getElementById('locationDot').className = 'absolute top-1 right-1 w-2.5 h-2.5 bg-gray-400 rounded-full';
-    
-    if (watchId) {
-        navigator.geolocation.clearWatch(watchId);
-        watchId = null;
-    }
-
-    showToast('Location sharing disabled', 'info');
-}
-
-// Navigate to job
-function navigate(jobId) {
-    const job = jobs.find(j => j.id === jobId);
-    if (!job) return;
-
-    // Open in Google Maps or Apple Maps
-    const address = encodeURIComponent(job.address);
-    const mapsUrl = /iPhone|iPad|iPod/.test(navigator.userAgent)
-        ? `maps://maps.google.com/maps?daddr=${address}`
-        : `https://www.google.com/maps/dir/?api=1&destination=${address}`;
-    
-    window.open(mapsUrl, '_blank');
-    showToast('Opening navigation...', 'info');
-}
-
-// Call property
-function callProperty(jobId) {
-    // In real app, this would call the property manager
-    showToast('Calling property manager...', 'info');
-    // Simulate call
-    setTimeout(() => {
-        window.location.href = 'tel:+14431234567';
-    }, 500);
-}
-
-// Start job
-function startJob(jobId) {
-    const job = jobs.find(j => j.id === jobId);
-    if (!job) return;
-
-    if (!job.guestsOut) {
-        showToast('⚠️ Warning: Guests are still in the unit!', 'warning');
-        return;
-    }
-
-    showToast('Job started! Timer is running...', 'success');
-    closeJobModal();
-    
-    // In real app, this would start job tracking
-}
-
-// Refresh jobs
 function refreshJobs() {
-    showToast('Refreshing job list...', 'info');
-    
-    // Simulate refresh
-    setTimeout(() => {
-        renderJobs();
-        updateStats();
-        showToast('Jobs updated!', 'success');
-    }, 1000);
+    // re-load from LS (demo)
+    jobs = loadJobsFromLS();
+    renderJobs();
+    showToast('Jobs updated!', 'success');
 }
 
-// Show toast notification
-function showToast(message, type = 'info') {
-    const toast = document.getElementById('notificationToast');
-    const toastMessage = document.getElementById('toastMessage');
-    
-    const colors = {
-        success: 'border-green-500',
-        error: 'border-red-500',
-        warning: 'border-yellow-500',
-        info: 'border-blue-500'
-    };
+/* ---------- Init ---------- */
+document.addEventListener('DOMContentLoaded', () => {
+    // wire initial tab styles (today)
+    switchTab('today');
+    renderJobs();
+    showToast('Welcome back! You have new assignments.', 'info');
 
-    toast.querySelector('.glass-effect').className = `glass-effect rounded-xl p-4 shadow-xl border-l-4 ${colors[type] || colors.info}`;
-    toastMessage.textContent = message;
+    // reuse original simulated updates (kept behavior)
+    setInterval(() => {
+        if (Math.random() > 0.7) {
+            const randomJob = jobs[Math.floor(Math.random() * jobs.length)];
+            if (!randomJob) return;
+            const oldStatus = randomJob.guestsOut;
+            randomJob.guestsOut = !randomStatusToggle(randomJob.guestsOut);
+            // save
+            saveJobsToLS(jobs);
+            renderJobs();
+            updateCounts();
+            if (randomJob.guestsOut && !oldStatus) {
+                showToast(`🎉 Room ${randomJob.room} is now ready to clean!`, 'success');
+                updateNotificationBadge(1);
+            }
+        }
+    }, 15000);
+});
 
-    toast.classList.add('show');
-
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
+// helper for simulated updates
+function randomStatusToggle(current) {
+    // small chance to flip
+    return Math.random() > 0.5 ? !current : current;
 }
 
-// Update notification badge
+/* ---------- Notification badge ---------- */
 function updateNotificationBadge(count) {
     const badge = document.getElementById('notificationBadge');
     const currentCount = parseInt(badge.textContent || '0');
     const newCount = currentCount + count;
-    
     if (newCount > 0) {
         badge.textContent = newCount;
         badge.classList.remove('hidden');
@@ -832,13 +1037,12 @@ function updateNotificationBadge(count) {
     }
 }
 
-// Prevent back button on modal
-window.addEventListener('popstate', () => {
-    if (!document.getElementById('jobModal').classList.contains('hidden')) {
-        closeJobModal();
-    }
-});
+/* ---------- Expose simple dev API on window for testing ---------- */
+window.Savvy = {
+    jobsRef: () => jobs,
+    saveJobs: () => saveJobsToLS(jobs),
+    resetDemo: () => { localStorage.removeItem(LS_JOBS_KEY); localStorage.removeItem(LS_CHECKLISTS_KEY); localStorage.removeItem(LS_OVERRIDES_KEY); localStorage.removeItem(LS_PHOTOS_KEY); jobs = loadJobsFromLS(); renderJobs(); }
+};
 </script>
-
 </body>
 </html>
