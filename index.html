@@ -1,688 +1,844 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Savvy OS - My Jobs (Dark Mode)</title>
-  <link rel="icon" href="favicon.ico" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* Minimal additional styles for mobile ergonomics */
-    :root {
-      --card: #0b1220;
-      --muted: #94a3b8;
-      --accent: #06b6d4;
-      --accent-2: #7c3aed;
-      --glass: rgba(255,255,255,0.03);
-    }
-    body { background: linear-gradient(180deg,#030612 0%, #071428 100%); color: #e6eef8; font-family: Inter, ui-sans-serif, system-ui; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
-    .card { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.04); box-shadow: 0 6px 20px rgba(2,6,23,0.6); }
-    .tab-indicator { height:3px; background: linear-gradient(90deg,var(--accent),var(--accent-2)); border-radius:2px; transition:all .25s ease; }
-    .big-btn { padding: .85rem 1rem; border-radius: 12px; font-weight:700; }
-    input[type="file"] { display:none; }
-    .week-day { min-width:48px; }
-    .check-tile { min-height:56px; }
-    .photo-thumb { width:100%; height:160px; object-fit:cover; border-radius:10px; }
-    .toast { position:fixed; left:50%; transform:translateX(-50%); bottom:18px; z-index:60; }
-    @media(min-width:768px){ .mobile-only { display:none; } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Savvy OS - My Jobs</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .gradient-bg { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+        }
+        .glass-effect { 
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .job-card {
+            transform: translateY(0);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .job-card:active {
+            transform: scale(0.98);
+        }
+        .status-ready {
+            background: linear-gradient(135deg, #dcfce7, #86efac);
+            border: 2px solid #22c55e;
+            animation: readyPulse 2s ease-in-out infinite;
+        }
+        .status-waiting {
+            background: linear-gradient(135deg, #fef3c7, #fde047);
+            border: 2px solid #eab308;
+        }
+        @keyframes readyPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+        }
+        .location-active {
+            animation: locationPulse 2s ease-in-out infinite;
+        }
+        @keyframes locationPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        .floating-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.4);
+        }
+        .notification-toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            opacity: 0;
+            transition: all 0.3s ease-in-out;
+            z-index: 1000;
+            max-width: 90%;
+        }
+        .notification-toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        .tab-indicator {
+            position: absolute;
+            bottom: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #3b82f6, #2563eb);
+            transition: all 0.3s ease-in-out;
+        }
+        .swipe-action {
+            transform: translateX(0);
+            transition: transform 0.3s ease-in-out;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        .badge-pulse {
+            animation: badgePulse 2s ease-in-out infinite;
+        }
+        @keyframes badgePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+    </style>
 </head>
-<body class="min-h-screen pb-28">
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
 
 <!-- Header -->
-<header class="sticky top-0 z-50 px-4 py-3 border-b border-white/6 backdrop-blur-sm">
-  <div class="flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-slate-800 to-slate-700 flex items-center justify-center">
-        <svg class="w-6 h-6 text-cyan-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-          <path d="M8 7V4a2 2 0 012-2h4a2 2 0 012 2v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-        </svg>
-      </div>
-      <div>
-        <h1 class="text-lg font-bold">My Jobs</h1>
-        <div class="text-xs text-[--muted]" id="cleanerName">Sarah Johnson • Cleaner</div>
-      </div>
+<header class="glass-effect sticky top-0 z-50 border-b border-white/20">
+    <div class="px-4 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <img src="savvy-os-logo.png" alt="Savvy OS" class="w-10 h-10 rounded-xl">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800">My Jobs</h1>
+                    <p class="text-xs text-slate-600" id="cleanerName">Sarah Johnson</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button id="locationBtn" onclick="toggleLocation()" class="relative p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors">
+                    <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    </svg>
+                    <div id="locationDot" class="absolute top-1 right-1 w-2.5 h-2.5 bg-gray-400 rounded-full"></div>
+                </button>
+                
+                <div class="relative">
+                    <button class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors">
+                        <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                        </svg>
+                    </button>
+                    <div id="notificationBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center badge-pulse hidden">
+                        0
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <div class="flex items-center gap-2">
-      <button id="refreshBtn" class="p-2 rounded-lg bg-white/3 hover:bg-white/5" title="Refresh">
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M4 4v6h6" stroke-width="1.6"></path>
-          <path d="M20 20v-6h-6" stroke-width="1.6"></path>
-          <path d="M20 4a9 9 0 10.001 0z" stroke-width="1.6"></path>
-        </svg>
-      </button>
-      <button id="locBtn" class="p-2 rounded-lg bg-white/3 hover:bg-white/5" title="Toggle Location">
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M12 2v4" stroke-width="1.6"></path>
-          <path d="M12 18v4" stroke-width="1.6"></path>
-          <path d="M4 12h4" stroke-width="1.6"></path>
-          <path d="M16 12h4" stroke-width="1.6"></path>
-          <circle cx="12" cy="12" r="6" stroke-width="1.6"></circle>
-        </svg>
-      </button>
+    
+    <!-- Tabs -->
+    <div class="relative px-4">
+        <div class="flex space-x-1 border-b border-slate-200">
+            <button onclick="switchTab('today')" class="tab-btn flex-1 px-4 py-3 text-sm font-semibold text-blue-600 relative" data-tab="today">
+                Today
+                <span class="ml-1 px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full text-xs" id="todayCount">0</span>
+            </button>
+            <button onclick="switchTab('upcoming')" class="tab-btn flex-1 px-4 py-3 text-sm font-semibold text-slate-600 relative" data-tab="upcoming">
+                Upcoming
+                <span class="ml-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs" id="upcomingCount">0</span>
+            </button>
+            <button onclick="switchTab('completed')" class="tab-btn flex-1 px-4 py-3 text-sm font-semibold text-slate-600 relative" data-tab="completed">
+                Completed
+                <span class="ml-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs" id="completedCount">0</span>
+            </button>
+        </div>
+        <div class="tab-indicator" style="left: 0; width: 33.33%;"></div>
     </div>
-  </div>
-
-  <!-- Tabs -->
-  <div class="mt-3">
-    <div class="flex gap-2 relative">
-      <button class="tab-btn flex-1 py-2 text-sm font-semibold text-cyan-200" data-tab="today">Today <span id="todayCount" class="ml-2 text-xs text-[--muted]"></span></button>
-      <button class="tab-btn flex-1 py-2 text-sm text-[--muted]" data-tab="week">This Week <span id="weekCount" class="ml-2 text-xs text-[--muted]"></span></button>
-      <button class="tab-btn flex-1 py-2 text-sm text-[--muted]" data-tab="upcoming">Upcoming <span id="upcomingCount" class="ml-2 text-xs text-[--muted]"></span></button>
-      <button class="tab-btn flex-1 py-2 text-sm text-[--muted]" data-tab="completed">Completed <span id="completedCount" class="ml-2 text-xs text-[--muted]"></span></button>
-    </div>
-    <div class="mt-1">
-      <div id="tabIndicator" class="tab-indicator" style="width:25%;"></div>
-    </div>
-  </div>
 </header>
 
-<!-- Controls: week nav + filters -->
-<section class="px-4 mt-3 mobile-only">
-  <div id="weekControls" class="hidden card p-3 rounded-xl mb-3 flex items-center justify-between">
-    <div class="flex items-center gap-2">
-      <button id="prevWeek" class="p-2 rounded-lg bg-white/3">◀</button>
-      <div id="weekLabel" class="text-sm font-semibold"></div>
-      <button id="nextWeek" class="p-2 rounded-lg bg-white/3">▶</button>
-    </div>
-    <div>
-      <button id="filterBtn" class="p-2 rounded-lg bg-white/3">Filter</button>
-    </div>
-  </div>
-</section>
-
-<!-- Week strip for mobile -->
-<section class="px-4">
-  <div id="weekStrip" class="flex gap-2 overflow-x-auto pb-2"></div>
-</section>
-
 <!-- Main Content -->
-<main class="px-4 mt-3">
-  <div id="jobsList" class="space-y-3"></div>
+<main class="px-4 py-4 pb-24">
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
+            <div class="text-2xl font-bold text-blue-600" id="statsTotal">0</div>
+            <div class="text-xs text-slate-600 font-medium">Total Today</div>
+        </div>
+        <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
+            <div class="text-2xl font-bold text-green-600" id="statsReady">0</div>
+            <div class="text-xs text-slate-600 font-medium">Ready Now</div>
+        </div>
+        <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100">
+            <div class="text-2xl font-bold text-amber-600" id="statsWaiting">0</div>
+            <div class="text-xs text-slate-600 font-medium">Waiting</div>
+        </div>
+    </div>
 
-  <!-- Empty state -->
-  <div id="emptyState" class="text-center py-12 opacity-70 hidden">
-    <div class="text-xl font-bold mb-2">No jobs here</div>
-    <div class="text-sm text-[--muted]">Try another tab or adjust filters</div>
-  </div>
+    <!-- Jobs List -->
+    <div id="jobsList" class="space-y-4">
+        <!-- Jobs will be dynamically inserted here -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="text-center py-12 hidden">
+        <div class="w-20 h-20 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+            <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-700 mb-2">No Jobs Here</h3>
+        <p class="text-sm text-slate-500">Check other tabs for assignments</p>
+    </div>
 </main>
 
-<!-- Floating refresh / add (mobile) -->
-<div class="fixed bottom-6 right-4 z-50">
-  <button id="floatingRefresh" class="big-btn bg-gradient-to-r from-slate-700 to-slate-600 text-white card">
-    Refresh
-  </button>
-</div>
+<!-- Floating Action Button -->
+<button onclick="refreshJobs()" class="floating-btn w-14 h-14 bg-gradient-to-r from-blue-600 to-blue-700 rounded-full flex items-center justify-center text-white hover:from-blue-700 hover:to-blue-800 transition-all">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+    </svg>
+</button>
 
-<!-- Toast -->
-<div id="toast" class="toast hidden"></div>
+<!-- Notification Toast -->
+<div id="notificationToast" class="notification-toast">
+    <div class="glass-effect rounded-xl p-4 shadow-xl border-l-4 border-blue-500">
+        <div class="flex items-start space-x-3">
+            <div class="flex-shrink-0">
+                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <p id="toastMessage" class="text-sm font-medium text-slate-800"></p>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Job Detail Modal -->
-<div id="jobModal" class="fixed inset-0 z-50 hidden">
-  <div class="absolute inset-0 bg-black/60" onclick="closeModal(event)"></div>
-  <div class="absolute left-0 right-0 bottom-0 rounded-t-2xl card p-4 max-h-[85vh] overflow-auto">
-    <div class="flex items-center justify-between mb-3">
-      <div>
-        <h2 id="modalTitle" class="text-lg font-bold"></h2>
-        <div id="modalSubtitle" class="text-xs text-[--muted]"></div>
-      </div>
-      <div class="flex items-center gap-2">
-        <button class="p-2 rounded-lg bg-white/3" onclick="closeJobModal()">
-          Close
-        </button>
-      </div>
+<div id="jobModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden" onclick="closeModal(event)">
+    <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[85vh] overflow-y-auto slide-up" onclick="event.stopPropagation()">
+        <div class="sticky top-0 bg-white border-b border-slate-200 px-4 py-4 flex items-center justify-between rounded-t-3xl">
+            <h2 class="text-xl font-bold text-slate-800" id="modalTitle">Job Details</h2>
+            <button onclick="closeJobModal()" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div id="modalContent" class="p-4">
+            <!-- Content will be dynamically inserted -->
+        </div>
     </div>
-
-    <div id="modalBody"></div>
-  </div>
-</div>
-
-<!-- Override Confirmation Modal -->
-<div id="overrideModal" class="fixed inset-0 z-60 hidden">
-  <div class="absolute inset-0 bg-black/70" onclick="closeOverrideModal()"></div>
-  <div class="absolute inset-4 rounded-xl card p-4 max-h-[80vh] overflow-auto">
-    <h3 class="text-lg font-bold mb-2">Confirm Override</h3>
-    <p class="text-sm text-[--muted] mb-3">You are overriding the guest status and marking the unit ready to clean. Proceed only if you are certain guests have left or it is safe.</p>
-
-    <label class="block text-sm mb-2">Optional note (why you override)</label>
-    <textarea id="overrideNote" class="w-full p-3 rounded-lg bg-white/3 text-sm" rows="3" placeholder="e.g., Manager confirmed; I checked property; guests packed up..."></textarea>
-
-    <div class="flex items-center gap-2 mt-3">
-      <button id="confirmOverrideBtn" class="flex-1 big-btn bg-gradient-to-r from-emerald-500 to-green-600">Confirm & Start</button>
-      <button class="flex-1 big-btn bg-white/3" onclick="closeOverrideModal()">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- Checklist Modal -->
-<div id="checklistModal" class="fixed inset-0 z-70 hidden">
-  <div class="absolute inset-0 bg-black/70" onclick="closeChecklistModal()"></div>
-  <div class="absolute left-0 right-0 bottom-0 rounded-t-2xl card p-4 max-h-[85vh] overflow-auto">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="text-lg font-bold">Post-Cleaning Checklist</h3>
-      <div class="text-sm text-[--muted]" id="checklistTimer">--</div>
-    </div>
-
-    <div id="checklistItems" class="space-y-3">
-      <!-- checklist tiles injected here -->
-    </div>
-
-    <div class="mt-3">
-      <label class="block text-sm mb-1">Add photo (optional but helpful)</label>
-      <label for="photoInput" class="w-full card p-3 rounded-lg cursor-pointer text-sm flex items-center gap-3">
-        <svg class="w-6 h-6 text-[--muted]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <rect x="3" y="7" width="18" height="13" rx="2" stroke-width="1.4"></rect>
-          <path d="M8 11a2 2 0 112 2 2 2 0 01-2-2z" stroke-width="1.4"></path>
-        </svg>
-        <span id="photoLabel" class="text-sm text-[--muted]">Tap to take or choose photo</span>
-      </label>
-      <input id="photoInput" type="file" accept="image/*" capture="environment" />
-      <div id="photoPreview" class="mt-3 hidden">
-        <img id="photoImg" class="photo-thumb" alt="preview" />
-        <button id="removePhotoBtn" class="mt-2 big-btn bg-white/3 w-full">Remove Photo</button>
-      </div>
-    </div>
-
-    <div class="mt-4 flex gap-2">
-      <button id="submitChecklistBtn" class="flex-1 big-btn bg-gradient-to-r from-purple-600 to-violet-600">Submit & Complete Job</button>
-      <button class="flex-1 big-btn bg-white/3" onclick="closeChecklistModal()">Cancel</button>
-    </div>
-  </div>
 </div>
 
 <script>
-/*
-  Savvy OS - My Jobs (Dark Mode) - Single-file
-  - Demo persistence: localStorage
-  - Live integration: placeholders where to call Firestore
-  - Optimized for mobile cleaners
-*/
-
-/* ------------------------------
-   Demo Data & Persistence Layer
-   ------------------------------ */
-const STORAGE_KEY = 'savvy.jobs.v1';
-const STORAGE_CHECKLIST_KEY = 'savvy.checklists.v1';
-const STORAGE_PHOTOS_KEY = 'savvy.photos.v1';
-const STORAGE_OVERRIDES_KEY = 'savvy.overrides.v1';
-
-// Mock initial jobs (dates spread across the week)
-const todayISO = (new Date()).toISOString().split('T')[0];
-function addDays(dateStr, d) {
-  const t = new Date(dateStr);
-  t.setDate(t.getDate()+d);
-  return t.toISOString().split('T')[0];
-}
-const INITIAL_JOBS = [
-  { id: 101, location: 'Downtown Hotel', room:'205', startTime:'09:00', dueTime:'11:00', predictedTime:'2h', guestCount:2, dogCount:0, wifiIncluded:true, linenPickup:true, guestsOut:true, priority:'high', lockCode:'356374', date: todayISO, status:'assigned', permanentInstructions:'Standard deep clean', weekSpecificInstructions:'Focus bathroom' },
-  { id: 102, location: 'Riverside Inn', room:'312', startTime:'12:00', dueTime:'14:00', predictedTime:'2h', guestCount:3, dogCount:1, wifiIncluded:true, linenPickup:false, guestsOut:false, priority:'normal', lockCode:'789456', date: addDays(todayISO, 0), status:'assigned', permanentInstructions:'Standard clean', weekSpecificInstructions:'Vacuum carpets' },
-  { id: 103, location: 'City Center Lodge', room:'108', startTime:'14:30', dueTime:'17:00', predictedTime:'2.5h', guestCount:4, dogCount:0, wifiIncluded:true, linenPickup:true, guestsOut:true, priority:'high', lockCode:'112233', date: addDays(todayISO, 1), status:'assigned', permanentInstructions:'VIP - white glove', weekSpecificInstructions:'Polish surfaces' },
-  { id: 104, location: 'Beachside BnB', room:'12', startTime:'08:00', dueTime:'09:30', predictedTime:'1.5h', guestCount:1, dogCount:0, wifiIncluded:false, linenPickup:false, guestsOut:false, priority:'low', lockCode:'000000', date: addDays(todayISO, 2), status:'assigned', permanentInstructions:'Quick turn', weekSpecificInstructions:'' },
-  { id: 105, location: 'Lakeside Resort', room:'501', startTime:'10:00', dueTime:'12:00', predictedTime:'2h', guestCount:2, dogCount:0, wifiIncluded:true, linenPickup:true, guestsOut:false, priority:'normal', lockCode:'445566', date: addDays(todayISO, -1), status:'completed', completedAt: Date.now()-86400000, completedBy:'Sarah', checklistId: null }
-];
-
-// wrapper to load / save
-function loadJobs() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_JOBS));
-    return [...INITIAL_JOBS];
-  }
-  try { return JSON.parse(raw); } catch(e){ return [...INITIAL_JOBS]; }
-}
-function saveJobs(arr) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-  // Placeholder: in live, push to Firestore here
-  // e.g. firebase.firestore().collection('jobs').doc(id).update({...})
-}
-function loadChecklists(){ return JSON.parse(localStorage.getItem(STORAGE_CHECKLIST_KEY)||'{}'); }
-function saveChecklists(obj){ localStorage.setItem(STORAGE_CHECKLIST_KEY, JSON.stringify(obj)); }
-function loadPhotos(){ return JSON.parse(localStorage.getItem(STORAGE_PHOTOS_KEY)||'{}'); }
-function savePhotos(obj){ localStorage.setItem(STORAGE_PHOTOS_KEY, JSON.stringify(obj)); }
-function loadOverrides(){ return JSON.parse(localStorage.getItem(STORAGE_OVERRIDES_KEY)||'{}'); }
-function saveOverrides(obj){ localStorage.setItem(STORAGE_OVERRIDES_KEY, JSON.stringify(obj)); }
-
-/* ------------------------------
-   App State
-   ------------------------------ */
-let jobs = loadJobs();
-let currentTab = 'today'; // today | week | upcoming | completed
-let selectedDate = new Date(); // used for week strip selection
-let weekStart = getStartOfWeek(selectedDate); // monday start
-let activeJobId = null;
-
-/* ------------------------------
-   UI Helpers
-   ------------------------------ */
-function q(selector, el=document) { return el.querySelector(selector); }
-function qq(selector, el=document) { return Array.from(el.querySelectorAll(selector)); }
-function fmtDateISO(d) { return d.toISOString().split('T')[0]; }
-function getStartOfWeek(dt) {
-  const d = new Date(dt);
-  const day = d.getDay(); // 0 Sun
-  const diff = d.getDate() - (day === 0 ? 6 : day-1); // make Monday start
-  const start = new Date(d.setDate(diff));
-  start.setHours(0,0,0,0);
-  return start;
-}
-function addDaysToDate(dateObj, days) {
-  const t = new Date(dateObj);
-  t.setDate(t.getDate()+days);
-  return t;
-}
-function showToast(msg, delay=2200) {
-  const t = q('#toast');
-  t.textContent = msg;
-  t.classList.remove('hidden');
-  t.classList.add('card','p-3','rounded-lg','text-sm');
-  setTimeout(()=> t.classList.add('opacity-0'), 10);
-  setTimeout(()=> {
-    t.classList.add('hidden'); t.classList.remove('opacity-0');
-  }, delay);
-}
-
-/* ------------------------------
-   Rendering: Tabs, Week Strip, Jobs
-   ------------------------------ */
-function updateCounts() {
-  const todayISO = (new Date()).toISOString().split('T')[0];
-  q('#todayCount').textContent = jobs.filter(j=> j.date===todayISO && j.status==='assigned').length;
-  q('#weekCount').textContent = jobs.filter(j=> isDateInWeek(j.date, weekStart) && j.status==='assigned').length;
-  q('#upcomingCount').textContent = jobs.filter(j=> j.date > todayISO && j.status==='assigned').length;
-  q('#completedCount').textContent = jobs.filter(j=> j.status==='completed').length;
-}
-
-function isDateInWeek(dateISO, startOfWeekDate) {
-  const start = new Date(startOfWeekDate);
-  start.setHours(0,0,0,0);
-  const end = addDaysToDate(start, 6);
-  const dt = new Date(dateISO + 'T00:00:00');
-  return dt>=start && dt<=end;
-}
-
-function renderTabs() {
-  qq('.tab-btn').forEach(btn => {
-    if (btn.dataset.tab === currentTab) {
-      btn.classList.add('text-cyan-200'); btn.classList.remove('text-[--muted]');
-    } else {
-      btn.classList.remove('text-cyan-200'); btn.classList.add('text-[--muted]');
+// Mock data - syncs with your main dashboard
+const MOCK_JOBS = [
+    {
+        id: 1,
+        location: 'Downtown Hotel',
+        address: '123 Main St, Ocean City, MD 21842',
+        room: '205',
+        roomType: 'Deluxe Suite',
+        startTime: '09:00',
+        dueTime: '11:00',
+        predictedTime: '2h 0m',
+        guestCount: 2,
+        dogCount: 0,
+        wifiIncluded: true,
+        linenPickup: true,
+        guestsOut: true,
+        priority: 'high',
+        lockCode: '356374',
+        wifiNetwork: 'Rockyroad',
+        wifiPassword: 'COvid$Sucks!',
+        bedInfo: '1 King Bed',
+        bathInfo: '1 Full Bath',
+        permanentInstructions: 'Standard deep clean protocol',
+        weekSpecificInstructions: 'Focus on bathroom deep clean',
+        linenInstructions: 'Pick up at 128th Street office',
+        parkingSpace: 'Space #A-12',
+        parkingInstructions: 'Enter through main gate',
+        date: new Date().toISOString().split('T')[0],
+        status: 'assigned'
+    },
+    {
+        id: 2,
+        location: 'Riverside Inn',
+        address: '456 River Rd, Ocean City, MD 21843',
+        room: '312',
+        roomType: 'Standard Room',
+        startTime: '12:00',
+        dueTime: '14:00',
+        predictedTime: '2h 0m',
+        guestCount: 3,
+        dogCount: 1,
+        wifiIncluded: true,
+        linenPickup: false,
+        guestsOut: false,
+        priority: 'normal',
+        lockCode: '789456',
+        wifiNetwork: 'RiversideGuest',
+        wifiPassword: 'Welcome2023!',
+        bedInfo: '2 Queen Beds',
+        bathInfo: '1 Full Bath',
+        permanentInstructions: 'Standard clean',
+        weekSpecificInstructions: 'Extra attention to carpets',
+        linenInstructions: 'N/A',
+        parkingSpace: 'Space #B-5',
+        parkingInstructions: 'Park in visitor lot',
+        date: new Date().toISOString().split('T')[0],
+        status: 'assigned'
+    },
+    {
+        id: 3,
+        location: 'City Center Lodge',
+        address: '789 City Ave, Ocean City, MD 21844',
+        room: '108',
+        roomType: 'Presidential Suite',
+        startTime: '14:30',
+        dueTime: '17:00',
+        predictedTime: '2h 30m',
+        guestCount: 4,
+        dogCount: 0,
+        wifiIncluded: true,
+        linenPickup: true,
+        guestsOut: true,
+        priority: 'high',
+        lockCode: '112233',
+        wifiNetwork: 'CityCenterVIP',
+        wifiPassword: 'Luxury@2023',
+        bedInfo: '1 King Bed, 2 Twin Beds',
+        bathInfo: '2 Full Baths',
+        permanentInstructions: 'VIP treatment - white glove service',
+        weekSpecificInstructions: 'Polish all surfaces',
+        linenInstructions: 'Pick up premium linens at front desk',
+        parkingSpace: 'Space #V-1',
+        parkingInstructions: 'VIP parking entrance',
+        date: new Date().toISOString().split('T')[0],
+        status: 'assigned'
     }
-  });
-  // indicator
-  const mapping = ['today','week','upcoming','completed'];
-  const idx = mapping.indexOf(currentTab);
-  const indicator = q('#tabIndicator');
-  indicator.style.left = `${idx * 25}%`;
-  indicator.style.width = `25%`;
-}
-
-function renderWeekStrip() {
-  const strip = q('#weekStrip');
-  strip.innerHTML = '';
-  const start = weekStart;
-  for (let i=0;i<7;i++){
-    const day = addDaysToDate(start,i);
-    const iso = fmtDateISO(day);
-    const label = day.toLocaleDateString(undefined,{weekday:'short', day:'numeric'});
-    const isSelected = fmtDateISO(selectedDate) === iso;
-    const jobsCount = jobs.filter(j=> j.date===iso && j.status==='assigned').length;
-    const el = document.createElement('button');
-    el.className = `card p-2 rounded-lg flex flex-col items-center week-day ${isSelected ? 'border-2 border-cyan-400' : 'bg-white/2'}`;
-    el.innerHTML = `<div class="text-sm font-semibold">${label}</div><div class="text-xs text-[--muted]">${jobsCount} jobs</div>`;
-    el.onclick = ()=> { selectedDate = day; renderJobs(); };
-    strip.appendChild(el);
-  }
-  q('#weekControls').classList.remove('hidden');
-  q('#weekLabel').textContent = `${start.toLocaleDateString()} - ${addDaysToDate(start,6).toLocaleDateString()}`;
-}
-
-function renderJobs() {
-  updateCounts();
-  renderTabs();
-  renderWeekStrip();
-
-  const container = q('#jobsList');
-  container.innerHTML = '';
-  const todayISO = (new Date()).toISOString().split('T')[0];
-
-  let filtered = jobs.filter(j => {
-    if (currentTab === 'today') return j.date === todayISO && j.status === 'assigned';
-    if (currentTab === 'week') return isDateInWeek(j.date, weekStart) && j.status === 'assigned';
-    if (currentTab === 'upcoming') return j.date > todayISO && j.status === 'assigned';
-    if (currentTab === 'completed') return j.status === 'completed';
-    return false;
-  });
-
-  // if none
-  if (filtered.length === 0) {
-    q('#emptyState').classList.remove('hidden');
-    return;
-  } else q('#emptyState').classList.add('hidden');
-
-  // sort by date/time
-  filtered.sort((a,b) => {
-    if (a.date !== b.date) return a.date.localeCompare(b.date);
-    return (a.startTime||'').localeCompare(b.startTime||'');
-  });
-
-  filtered.forEach(job => {
-    const el = document.createElement('div');
-    el.className = 'card p-3 rounded-xl';
-    el.onclick = ()=> openJobModal(job.id);
-    const statusBadge = job.guestsOut ? `<span class="text-xs px-2 py-1 rounded-full bg-emerald-800 text-emerald-200">READY</span>` : `<span class="text-xs px-2 py-1 rounded-full bg-yellow-800 text-yellow-200">GUESTS IN</span>`;
-    const priority = job.priority==='high' ? `<span class="text-xs px-2 py-1 rounded-full bg-red-800 text-red-200">URGENT</span>` : '';
-    el.innerHTML = `
-      <div class="flex items-start justify-between">
-        <div>
-          <div class="flex items-center gap-2 mb-1">
-            <h3 class="font-bold text-sm">${job.location} • Room ${job.room}</h3>
-            ${priority}
-          </div>
-          <div class="text-xs text-[--muted]">${job.date} • ${job.startTime} - ${job.dueTime} • ${job.guestCount} guests ${job.dogCount? ' • '+job.dogCount+' dog(s)':''}</div>
-        </div>
-        <div class="text-right">
-          ${statusBadge}
-          <div class="text-xs text-[--muted] mt-2">${job.predictedTime || ''}</div>
-        </div>
-      </div>
-      <div class="mt-3 grid grid-cols-3 gap-2">
-        <button class="big-btn bg-gradient-to-r from-slate-700 to-slate-600 text-white" onclick="event.stopPropagation(); navigate(${job.id})">Navigate</button>
-        <button class="big-btn bg-gradient-to-r from-emerald-600 to-green-600 text-white" onclick="event.stopPropagation(); callProperty(${job.id})">Call</button>
-        <button class="big-btn bg-white/6" onclick="event.stopPropagation(); openJobModal(${job.id})">Details</button>
-      </div>
-    `;
-    container.appendChild(el);
-  });
-}
-
-/* ------------------------------
-   Job Modal & Actions
-   ------------------------------ */
-function openJobModal(jobId) {
-  activeJobId = jobId;
-  const job = jobs.find(j=> j.id===jobId);
-  if (!job) return;
-  q('#modalTitle').textContent = `${job.location} — Room ${job.room}`;
-  q('#modalSubtitle').textContent = `${job.date} • ${job.startTime} - ${job.dueTime}`;
-
-  const modalBody = q('#modalBody');
-  modalBody.innerHTML = `
-    <div class="space-y-3">
-      <div class="card p-3 rounded-lg">
-        <div class="flex justify-between items-start">
-          <div>
-            <div class="text-xs text-[--muted]">Status</div>
-            <div class="font-semibold">${job.guestsOut ? 'Guests out — Ready to clean' : 'Guests still in'}</div>
-          </div>
-          <div class="text-right">
-            <div class="text-xs text-[--muted]">Priority</div>
-            <div class="font-semibold">${job.priority.toUpperCase()}</div>
-          </div>
-        </div>
-
-        <div class="mt-3 grid grid-cols-2 gap-2">
-          <div><div class="text-xs text-[--muted]">Lock Code</div><div class="font-semibold">${job.lockCode}</div></div>
-          <div><div class="text-xs text-[--muted]">Linen Pickup</div><div class="font-semibold">${job.linenPickup ? 'Yes' : 'No'}</div></div>
-        </div>
-      </div>
-
-      <div class="card p-3 rounded-lg">
-        <div class="text-xs text-[--muted]">Instructions</div>
-        <div class="font-semibold mt-1">${job.permanentInstructions || ''}</div>
-        <div class="text-[--muted] text-sm mt-2">${job.weekSpecificInstructions || ''}</div>
-      </div>
-
-      <div class="flex gap-2">
-        <button class="flex-1 big-btn bg-gradient-to-r from-purple-600 to-violet-600 text-white" onclick="event.stopPropagation(); startJobFlow(${job.id})">${job.guestsOut ? 'Start Cleaning' : 'Start Cleaning (Override)'}</button>
-        <button class="flex-1 big-btn bg-white/6" onclick="event.stopPropagation(); openChecklistModal(${job.id}, false)">Open Checklist</button>
-      </div>
-    </div>
-  `;
-
-  q('#jobModal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeJobModal() {
-  q('#jobModal').classList.add('hidden');
-  document.body.style.overflow = 'auto';
-}
-function closeModal(e){ if (e.target.id==='jobModal') closeJobModal(); }
-
-/* ------------------------------
-   Start Job Flow (with Override)
-   ------------------------------ */
-function startJobFlow(jobId) {
-  const job = jobs.find(j=> j.id===jobId);
-  if (!job) return;
-  if (job.guestsOut) {
-    // Normal start
-    markJobInProgress(jobId);
-  } else {
-    // Need override confirmation
-    openOverrideModal(jobId);
-  }
-}
-
-function markJobInProgress(jobId, overrideNote='') {
-  const job = jobs.find(j=> j.id===jobId);
-  if (!job) return;
-  // mark started (for demo just show toast + open checklist)
-  showToast('Starting job — open checklist to complete.');
-  closeJobModal();
-
-  // store override note if present
-  if (overrideNote) {
-    const overrides = loadOverrides();
-    overrides[jobId] = { at: Date.now(), note: overrideNote, by: (q('#cleanerName').textContent||'') };
-    saveOverrides(overrides);
-    // Placeholder: send override log to Firestore
-  }
-
-  // In a live app: set job.status = 'in_progress' and save
-  job.status = 'in_progress';
-  saveJobs(jobs);
-
-  // Open checklist modal automatically
-  openChecklistModal(jobId, true);
-}
-
-/* ------------------------------
-   Override Modal
-   ------------------------------ */
-function openOverrideModal(jobId) {
-  activeJobId = jobId;
-  q('#overrideNote').value = '';
-  q('#overrideModal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-
-  q('#confirmOverrideBtn').onclick = () => {
-    const note = q('#overrideNote').value.trim();
-    closeOverrideModal();
-    markJobInProgress(jobId, note);
-  };
-}
-function closeOverrideModal() {
-  q('#overrideModal').classList.add('hidden');
-  document.body.style.overflow = 'auto';
-}
-
-/* ------------------------------
-   Checklist: items, photo, submit
-   ------------------------------ */
-const DEFAULT_CHECKLIST = [
-  { key:'trash', label:'Trash emptied' },
-  { key:'dust', label:'Surfaces dusted & wiped' },
-  { key:'bath', label:'Bathroom sanitized' },
-  { key:'linens', label:'Towels/linens replaced' },
-  { key:'floors', label:'Floors vacuumed/mopped' }
 ];
 
-let currentChecklistJobId = null;
-let selectedPhotoData = null;
+// State
+let currentTab = 'today';
+let locationEnabled = false;
+let watchId = null;
+let jobs = [...MOCK_JOBS];
 
-function openChecklistModal(jobId, autoOpen=true) {
-  currentChecklistJobId = jobId;
-  selectedPhotoData = null;
-  q('#photoPreview').classList.add('hidden');
-  q('#photoImg').src = '';
-  q('#photoLabel').textContent = 'Tap to take or choose photo';
-
-  // build checklist tiles
-  const container = q('#checklistItems');
-  container.innerHTML = '';
-  DEFAULT_CHECKLIST.forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'card p-3 rounded-lg flex items-center justify-between check-tile';
-    div.innerHTML = `
-      <div>
-        <div class="font-semibold">${item.label}</div>
-        <div class="text-xs text-[--muted]">Tap to toggle</div>
-      </div>
-      <button class="w-12 h-12 rounded-lg bg-white/6 text-xl" data-key="${item.key}">✓</button>
-    `;
-    const btn = div.querySelector('button');
-    btn.dataset.checked = 'false';
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      const c = btn.dataset.checked === 'true' ? 'false' : 'true';
-      btn.dataset.checked = c;
-      btn.classList.toggle('bg-emerald-700', c==='true');
-      btn.classList.toggle('text-white', c==='true');
-    };
-    container.appendChild(div);
-  });
-
-  // set checklist timer (optional)
-  q('#checklistTimer').textContent = 'Start: ' + new Date().toLocaleTimeString();
-
-  // photo input
-  q('#photoInput').onchange = handlePhotoInput;
-  q('#photoLabel').onclick = ()=> q('#photoInput').click();
-  q('#removePhotoBtn').onclick = ()=> { selectedPhotoData = null; q('#photoPreview').classList.add('hidden'); q('#photoImg').src=''; q('#photoLabel').textContent='Tap to take or choose photo'; };
-
-  // Submit
-  q('#submitChecklistBtn').onclick = submitChecklist;
-
-  q('#checklistModal').classList.remove('hidden');
-  if (autoOpen) closeJobModal();
-  document.body.style.overflow = 'hidden';
-}
-
-function closeChecklistModal() {
-  q('#checklistModal').classList.add('hidden');
-  document.body.style.overflow = 'auto';
-}
-
-function handlePhotoInput(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    selectedPhotoData = ev.target.result; // base64
-    q('#photoImg').src = selectedPhotoData;
-    q('#photoPreview').classList.remove('hidden');
-    q('#photoLabel').textContent = 'Photo attached';
-  };
-  reader.readAsDataURL(file);
-}
-
-function submitChecklist() {
-  // gather checked items
-  const buttons = qq('#checklistItems button');
-  const results = {};
-  buttons.forEach(b => results[b.dataset.key] = (b.dataset.checked === 'true'));
-
-  // For efficiency: require at least 2 items (trash + bath) to mark complete OR allow if photo + two items. Keep it easy.
-  const required = ['trash','bath'];
-  const hasRequired = required.every(r => results[r]);
-  const checkedCount = Object.values(results).filter(Boolean).length;
-
-  if (!hasRequired && checkedCount < 2 && !selectedPhotoData) {
-    alert('Please complete at least two checklist items (including Trash emptied and Bathroom sanitized recommended) or attach a photo.');
-    return;
-  }
-
-  // save checklist
-  const checklists = loadChecklists();
-  const id = 'cl_' + currentChecklistJobId + '_' + Date.now();
-  checklists[id] = { jobId: currentChecklistJobId, results, photoId: null, ts: Date.now(), by: q('#cleanerName').textContent || 'Unknown' };
-
-  // save photo (if present)
-  if (selectedPhotoData) {
-    const photos = loadPhotos();
-    const pid = 'ph_' + currentChecklistJobId + '_' + Date.now();
-    photos[pid] = { data: selectedPhotoData, ts: Date.now(), by: q('#cleanerName').textContent || 'Unknown' };
-    savePhotos(photos);
-    checklists[id].photoId = pid;
-  }
-
-  saveChecklists(checklists);
-
-  // mark job completed
-  const jobIdx = jobs.findIndex(j=> j.id===currentChecklistJobId);
-  if (jobIdx > -1) {
-    jobs[jobIdx].status = 'completed';
-    jobs[jobIdx].completedAt = Date.now();
-    jobs[jobIdx].completedBy = q('#cleanerName').textContent || 'Unknown';
-    jobs[jobIdx].checklistId = id;
-    saveJobs(jobs);
-  }
-
-  // Placeholder: here you'd push checklist and photo to Firestore
-  // Example (pseudo):
-  // await firestore.collection('checklists').doc(id).set(checklists[id]);
-  // if (selectedPhotoData) { upload to storage and store URL }
-
-  showToast('Checklist saved — job completed ✅');
-  closeChecklistModal();
-  renderJobs();
-}
-
-/* ------------------------------
-   Small helper actions
-   ------------------------------ */
-function navigate(jobId) {
-  const job = jobs.find(j=> j.id===jobId);
-  if (!job) return;
-  const addr = encodeURIComponent(job.location + ' ' + (job.address||''));
-  window.open(`https://www.google.com/maps/dir/?api=1&destination=${addr}`, '_blank');
-}
-function callProperty(jobId) {
-  showToast('Calling property manager...');
-  // in live, you may open tel: link or call through back-end
-}
-
-/* ------------------------------
-   Initial wiring & events
-   ------------------------------ */
-document.addEventListener('DOMContentLoaded', ()=>{
-  // tabs
-  qq('.tab-btn').forEach(btn => {
-    btn.onclick = ()=> { currentTab = btn.dataset.tab; renderJobs(); };
-  });
-
-  // refresh buttons
-  q('#refreshBtn').onclick = ()=> { jobs = loadJobs(); renderJobs(); showToast('Refreshed'); };
-  q('#floatingRefresh').onclick = ()=> { jobs = loadJobs(); renderJobs(); showToast('Refreshed'); };
-
-  // week nav
-  q('#prevWeek').onclick = ()=> { weekStart = addDaysToDate(weekStart, -7); renderJobs(); };
-  q('#nextWeek').onclick = ()=> { weekStart = addDaysToDate(weekStart, 7); renderJobs(); };
-
-  // init
-  renderJobs();
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    renderJobs();
+    updateStats();
+    showToast('Welcome back! You have new assignments.', 'info');
+    
+    // Simulate real-time updates
+    setInterval(() => {
+        // Randomly update a guest status (simulating dashboard updates)
+        if (Math.random() > 0.7) {
+            const randomJob = jobs[Math.floor(Math.random() * jobs.length)];
+            const oldStatus = randomJob.guestsOut;
+            randomJob.guestsOut = !randomJob.guestsOut;
+            renderJobs();
+            updateStats();
+            
+            if (randomJob.guestsOut && !oldStatus) {
+                showToast(`🎉 Room ${randomJob.room} is now ready to clean!`, 'success');
+                updateNotificationBadge(1);
+            }
+        }
+    }, 15000); // Check every 15 seconds
 });
 
-/* ------------------------------
-   Extra: expose small API for dev
-   ------------------------------ */
-window.SavvyDemo = {
-  loadJobs, saveJobs, jobsRef: ()=> jobs, resetDemo: ()=> { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(STORAGE_CHECKLIST_KEY); localStorage.removeItem(STORAGE_PHOTOS_KEY); localStorage.removeItem(STORAGE_OVERRIDES_KEY); jobs = loadJobs(); renderJobs(); }
-};
+// Render jobs
+function renderJobs() {
+    const container = document.getElementById('jobsList');
+    const emptyState = document.getElementById('emptyState');
+    
+    const today = new Date().toISOString().split('T')[0];
+    const filteredJobs = jobs.filter(job => {
+        if (currentTab === 'today') {
+            return job.date === today && job.status === 'assigned';
+        } else if (currentTab === 'upcoming') {
+            return job.date > today && job.status === 'assigned';
+        } else {
+            return job.status === 'completed';
+        }
+    });
 
+    if (filteredJobs.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+    }
+
+    emptyState.classList.add('hidden');
+    
+    container.innerHTML = filteredJobs.map(job => createJobCard(job)).join('');
+    
+    // Update tab counts
+    document.getElementById('todayCount').textContent = jobs.filter(j => j.date === today && j.status === 'assigned').length;
+    document.getElementById('upcomingCount').textContent = jobs.filter(j => j.date > today && j.status === 'assigned').length;
+    document.getElementById('completedCount').textContent = jobs.filter(j => j.status === 'completed').length;
+}
+
+// Create job card
+function createJobCard(job) {
+    const statusClass = job.guestsOut ? 'status-ready' : 'status-waiting';
+    const statusText = job.guestsOut ? '✓ READY TO CLEAN' : '⏳ GUESTS STILL IN';
+    const statusIcon = job.guestsOut ? '✓' : '⏳';
+    const priorityBadge = job.priority === 'high' ? `
+        <span class="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full border border-red-200">
+            URGENT
+        </span>
+    ` : '';
+
+    return `
+        <div class="job-card bg-white rounded-2xl shadow-lg border-2 border-slate-100 overflow-hidden" onclick="openJobModal(${job.id})">
+            <!-- Status Banner -->
+            <div class="${statusClass} px-4 py-3 text-center font-bold text-sm">
+                ${statusText}
+            </div>
+            
+            <div class="p-4">
+                <!-- Header -->
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h3 class="text-xl font-bold text-slate-800">Room ${job.room}</h3>
+                            ${priorityBadge}
+                        </div>
+                        <p class="text-sm text-slate-600 font-medium">${job.roomType}</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl">${statusIcon}</div>
+                    </div>
+                </div>
+
+                <!-- Location -->
+                <div class="flex items-center gap-2 mb-3 text-slate-700">
+                    <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    </svg>
+                    <span class="text-sm font-medium">${job.location}</span>
+                </div>
+
+                <!-- Time & Details -->
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div class="flex items-center gap-2 text-slate-600">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="text-sm">${job.startTime}-${job.dueTime}</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-slate-600">
+                        <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                        <span class="text-sm">${job.guestCount} guests</span>
+                    </div>
+                </div>
+
+                <!-- Badges -->
+                <div class="flex flex-wrap gap-2 mb-3">
+                    ${job.wifiIncluded ? '<span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full border border-blue-200">WiFi</span>' : ''}
+                    ${job.linenPickup ? '<span class="px-2 py-1 bg-amber-50 text-amber-700 text-xs font-semibold rounded-full border border-amber-200">Linen Pickup</span>' : ''}
+                    ${job.dogCount > 0 ? `<span class="px-2 py-1 bg-purple-50 text-purple-700 text-xs font-semibold rounded-full border border-purple-200">${job.dogCount} Dog${job.dogCount > 1 ? 's' : ''}</span>` : ''}
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="event.stopPropagation(); navigate(${job.id})" class="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"></path>
+                        </svg>
+                        Navigate
+                    </button>
+                    <button onclick="event.stopPropagation(); callProperty(${job.id})" class="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                        </svg>
+                        Call
+                    </button>
+                    <button onclick="event.stopPropagation(); openJobModal(${job.id})" class="px-3 py-2 bg-slate-600 text-white rounded-lg text-sm font-semibold hover:bg-slate-700 transition-colors flex items-center justify-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                        Details
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Open job modal
+function openJobModal(jobId) {
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    const modal = document.getElementById('jobModal');
+    const title = document.getElementById('modalTitle');
+    const content = document.getElementById('modalContent');
+
+    title.textContent = `${job.location} - Room ${job.room}`;
+    
+    content.innerHTML = `
+        <!-- Guest Status -->
+        <div class="${job.guestsOut ? 'status-ready' : 'status-waiting'} px-6 py-4 rounded-xl text-center font-bold text-lg mb-4">
+            ${job.guestsOut ? '✓ GUESTS OUT - READY TO CLEAN' : '⏳ GUESTS STILL IN UNIT'}
+        </div>
+
+        <!-- Critical Info -->
+        <div class="bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-200 rounded-xl p-4 mb-4">
+            <h3 class="font-bold text-red-900 mb-3 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+                Access Information
+            </h3>
+            <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-red-800 font-medium">Lock Code:</span>
+                    <span class="text-2xl font-bold text-red-900 tracking-wider">${job.lockCode}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-red-800 font-medium">WiFi Password:</span>
+                    <span class="text-lg font-bold text-red-900">${job.wifiPassword}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule -->
+        <div class="bg-white border border-slate-200 rounded-xl p-4 mb-4">
+            <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                Schedule & Time
+            </h3>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-slate-600">Start Time:</span>
+                    <span class="font-semibold text-slate-800">${job.startTime}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-600">Due Time:</span>
+                    <span class="font-semibold text-slate-800">${job.dueTime}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-600">Estimated Duration:</span>
+                    <span class="font-semibold text-slate-800">${job.predictedTime}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-600">Guests:</span>
+                    <span class="font-semibold text-slate-800">${job.guestCount} people${job.dogCount > 0 ? `, ${job.dogCount} dog${job.dogCount > 1 ? 's' : ''}` : ''}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Property Details -->
+        <div class="bg-white border border-slate-200 rounded-xl p-4 mb-4">
+            <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                Property Details
+            </h3>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-slate-600">Address:</span>
+                    <span class="font-medium text-slate-800 text-right">${job.address}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-600">Room Type:</span>
+                    <span class="font-medium text-slate-800">${job.roomType}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-600">Beds:</span>
+                    <span class="font-medium text-slate-800">${job.bedInfo}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-600">Bathrooms:</span>
+                    <span class="font-medium text-slate-800">${job.bathInfo}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-600">WiFi Network:</span>
+                    <span class="font-medium text-slate-800">${job.wifiNetwork}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cleaning Instructions -->
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+            <h3 class="font-bold text-blue-900 mb-3 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                </svg>
+                Cleaning Instructions
+            </h3>
+            <div class="space-y-3 text-sm">
+                <div>
+                    <span class="font-semibold text-blue-900 block mb-1">Standard Protocol:</span>
+                    <p class="text-blue-800">${job.permanentInstructions}</p>
+                </div>
+                <div>
+                    <span class="font-semibold text-blue-900 block mb-1">This Week's Focus:</span>
+                    <p class="text-blue-800">${job.weekSpecificInstructions}</p>
+                </div>
+                ${job.linenPickup ? `
+                <div>
+                    <span class="font-semibold text-blue-900 block mb-1">Linen Instructions:</span>
+                    <p class="text-blue-800">${job.linenInstructions}</p>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+
+        <!-- Parking -->
+        <div class="bg-white border border-slate-200 rounded-xl p-4 mb-4">
+            <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
+                </svg>
+                Parking Information
+            </h3>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-slate-600">Assigned Space:</span>
+                    <span class="font-semibold text-slate-800">${job.parkingSpace}</span>
+                </div>
+                <div>
+                    <span class="text-slate-600 block mb-1">Instructions:</span>
+                    <p class="text-slate-800 font-medium">${job.parkingInstructions}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <button onclick="navigate(${job.id})" class="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"></path>
+                </svg>
+                Navigate
+            </button>
+            <button onclick="callProperty(${job.id})" class="px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-semibold hover:from-green-700 hover:to-green-800 transition-all flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                </svg>
+                Call Property
+            </button>
+        </div>
+
+        <button onclick="startJob(${job.id})" class="w-full px-4 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-bold text-lg hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg flex items-center justify-center gap-2">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            START CLEANING
+        </button>
+    `;
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+// Close job modal
+function closeJobModal() {
+    const modal = document.getElementById('jobModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal on backdrop click
+function closeModal(event) {
+    if (event.target.id === 'jobModal') {
+        closeJobModal();
+    }
+}
+
+// Switch tabs
+function switchTab(tab) {
+    currentTab = tab;
+    
+    // Update tab styling
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (btn.dataset.tab === tab) {
+            btn.classList.remove('text-slate-600');
+            btn.classList.add('text-blue-600');
+        } else {
+            btn.classList.remove('text-blue-600');
+            btn.classList.add('text-slate-600');
+        }
+    });
+    
+    // Move indicator
+    const indicator = document.querySelector('.tab-indicator');
+    const tabIndex = ['today', 'upcoming', 'completed'].indexOf(tab);
+    indicator.style.left = `${tabIndex * 33.33}%`;
+    
+    renderJobs();
+}
+
+// Update stats
+function updateStats() {
+    const today = new Date().toISOString().split('T')[0];
+    const todayJobs = jobs.filter(j => j.date === today && j.status === 'assigned');
+    
+    document.getElementById('statsTotal').textContent = todayJobs.length;
+    document.getElementById('statsReady').textContent = todayJobs.filter(j => j.guestsOut).length;
+    document.getElementById('statsWaiting').textContent = todayJobs.filter(j => !j.guestsOut).length;
+}
+
+// Toggle location
+function toggleLocation() {
+    if (!locationEnabled) {
+        startLocationTracking();
+    } else {
+        stopLocationTracking();
+    }
+}
+
+// Start location tracking
+function startLocationTracking() {
+    if (!navigator.geolocation) {
+        showToast('Geolocation not supported', 'error');
+        return;
+    }
+
+    locationEnabled = true;
+    document.getElementById('locationDot').className = 'absolute top-1 right-1 w-2.5 h-2.5 bg-green-500 rounded-full location-active';
+    
+    watchId = navigator.geolocation.watchPosition(
+        (position) => {
+            // Update location in background
+            console.log('Location updated:', position.coords.latitude, position.coords.longitude);
+        },
+        (error) => {
+            console.error('Location error:', error);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 30000
+        }
+    );
+
+    showToast('Location sharing enabled', 'success');
+}
+
+// Stop location tracking
+function stopLocationTracking() {
+    locationEnabled = false;
+    document.getElementById('locationDot').className = 'absolute top-1 right-1 w-2.5 h-2.5 bg-gray-400 rounded-full';
+    
+    if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+    }
+
+    showToast('Location sharing disabled', 'info');
+}
+
+// Navigate to job
+function navigate(jobId) {
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    // Open in Google Maps or Apple Maps
+    const address = encodeURIComponent(job.address);
+    const mapsUrl = /iPhone|iPad|iPod/.test(navigator.userAgent)
+        ? `maps://maps.google.com/maps?daddr=${address}`
+        : `https://www.google.com/maps/dir/?api=1&destination=${address}`;
+    
+    window.open(mapsUrl, '_blank');
+    showToast('Opening navigation...', 'info');
+}
+
+// Call property
+function callProperty(jobId) {
+    // In real app, this would call the property manager
+    showToast('Calling property manager...', 'info');
+    // Simulate call
+    setTimeout(() => {
+        window.location.href = 'tel:+14431234567';
+    }, 500);
+}
+
+// Start job
+function startJob(jobId) {
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    if (!job.guestsOut) {
+        showToast('⚠️ Warning: Guests are still in the unit!', 'warning');
+        return;
+    }
+
+    showToast('Job started! Timer is running...', 'success');
+    closeJobModal();
+    
+    // In real app, this would start job tracking
+}
+
+// Refresh jobs
+function refreshJobs() {
+    showToast('Refreshing job list...', 'info');
+    
+    // Simulate refresh
+    setTimeout(() => {
+        renderJobs();
+        updateStats();
+        showToast('Jobs updated!', 'success');
+    }, 1000);
+}
+
+// Show toast notification
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('notificationToast');
+    const toastMessage = document.getElementById('toastMessage');
+    
+    const colors = {
+        success: 'border-green-500',
+        error: 'border-red-500',
+        warning: 'border-yellow-500',
+        info: 'border-blue-500'
+    };
+
+    toast.querySelector('.glass-effect').className = `glass-effect rounded-xl p-4 shadow-xl border-l-4 ${colors[type] || colors.info}`;
+    toastMessage.textContent = message;
+
+    toast.classList.add('show');
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+// Update notification badge
+function updateNotificationBadge(count) {
+    const badge = document.getElementById('notificationBadge');
+    const currentCount = parseInt(badge.textContent || '0');
+    const newCount = currentCount + count;
+    
+    if (newCount > 0) {
+        badge.textContent = newCount;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
+// Prevent back button on modal
+window.addEventListener('popstate', () => {
+    if (!document.getElementById('jobModal').classList.contains('hidden')) {
+        closeJobModal();
+    }
+});
 </script>
+
 </body>
 </html>
