@@ -277,110 +277,126 @@
 </div>
 
 <script>
-const LS_JOBS_KEY = 'savvy.jobs.v2';
+const LS_JOBS_KEY = 'savvy.jobs.v3';
 const LS_CHECKLISTS_KEY = 'savvy.checklists.v2';
 const LS_OVERRIDES_KEY = 'savvy.overrides.v2';
 const LS_PHOTOS_KEY = 'savvy.photos.v2';
 const LS_LOCATION_KEY = 'savvy.location.v2';
 
-const MOCK_JOBS = [
-    {
-        id: 1,
-        location: 'Downtown Hotel',
-        address: '123 Main St, Ocean City, MD 21842',
-        room: '205',
-        roomType: 'Deluxe Suite',
-        startTime: '09:00',
-        dueTime: '11:00',
-        predictedTime: '2h 0m',
-        guestCount: 2,
-        dogCount: 0,
-        wifiIncluded: true,
-        linenPickup: true,
-        guestsOut: true,
-        priority: 'high',
-        lockCode: '356374',
-        wifiNetwork: 'Rockyroad',
-        wifiPassword: 'COvid$Sucks!',
-        bedInfo: '1 King Bed',
-        bathInfo: '1 Full Bath',
-        permanentInstructions: 'Standard deep clean protocol',
-        weekSpecificInstructions: 'Focus on bathroom deep clean',
-        linenInstructions: 'Pick up at 128th Street office',
-        parkingSpace: 'Space #A-12',
-        parkingInstructions: 'Enter through main gate',
-        date: new Date().toISOString().split('T')[0],
-        status: 'assigned'
-    },
-    {
-        id: 2,
-        location: 'Riverside Inn',
-        address: '456 River Rd, Ocean City, MD 21843',
-        room: '312',
-        roomType: 'Standard Room',
-        startTime: '12:00',
-        dueTime: '14:00',
-        predictedTime: '2h 0m',
-        guestCount: 3,
-        dogCount: 1,
-        wifiIncluded: true,
-        linenPickup: false,
-        guestsOut: false,
-        priority: 'normal',
-        lockCode: '789456',
-        wifiNetwork: 'RiversideGuest',
-        wifiPassword: 'Welcome2023!',
-        bedInfo: '2 Queen Beds',
-        bathInfo: '1 Full Bath',
-        permanentInstructions: 'Standard clean',
-        weekSpecificInstructions: 'Extra attention to carpets',
-        linenInstructions: 'N/A',
-        parkingSpace: 'Space #B-5',
-        parkingInstructions: 'Park in visitor lot',
-        date: new Date().toISOString().split('T')[0],
-        status: 'assigned'
-    },
-    {
-        id: 3,
-        location: 'City Center Lodge',
-        address: '789 City Ave, Ocean City, MD 21844',
-        room: '108',
-        roomType: 'Presidential Suite',
-        startTime: '14:30',
-        dueTime: '17:00',
-        predictedTime: '2h 30m',
-        guestCount: 4,
-        dogCount: 0,
-        wifiIncluded: true,
-        linenPickup: true,
-        guestsOut: true,
-        priority: 'high',
-        lockCode: '112233',
-        wifiNetwork: 'CityCenterVIP',
-        wifiPassword: 'Luxury@2023',
-        bedInfo: '1 King Bed, 2 Twin Beds',
-        bathInfo: '2 Full Baths',
-        permanentInstructions: 'VIP treatment - white glove service',
-        weekSpecificInstructions: 'Polish all surfaces',
-        linenInstructions: 'Pick up premium linens at front desk',
-        parkingSpace: 'Space #V-1',
-        parkingInstructions: 'VIP parking entrance',
-        date: new Date().toISOString().split('T')[0],
-        status: 'assigned'
-    }
-];
+function getTodayISO() {
+    return new Date().toISOString().split('T')[0];
+}
+
+function getInitialJobs() {
+    const today = getTodayISO();
+    return [
+        {
+            id: 1,
+            location: 'Downtown Hotel',
+            address: '123 Main St, Ocean City, MD 21842',
+            room: '205',
+            roomType: 'Deluxe Suite',
+            startTime: '09:00',
+            dueTime: '11:00',
+            predictedTime: '2h 0m',
+            guestCount: 2,
+            dogCount: 0,
+            wifiIncluded: true,
+            linenPickup: true,
+            guestsOut: true,
+            priority: 'high',
+            lockCode: '356374',
+            wifiNetwork: 'Rockyroad',
+            wifiPassword: 'COvid$Sucks!',
+            bedInfo: '1 King Bed',
+            bathInfo: '1 Full Bath',
+            permanentInstructions: 'Standard deep clean protocol',
+            weekSpecificInstructions: 'Focus on bathroom deep clean',
+            linenInstructions: 'Pick up at 128th Street office',
+            parkingSpace: 'Space #A-12',
+            parkingInstructions: 'Enter through main gate',
+            date: today,
+            status: 'assigned'
+        },
+        {
+            id: 2,
+            location: 'Riverside Inn',
+            address: '456 River Rd, Ocean City, MD 21843',
+            room: '312',
+            roomType: 'Standard Room',
+            startTime: '12:00',
+            dueTime: '14:00',
+            predictedTime: '2h 0m',
+            guestCount: 3,
+            dogCount: 1,
+            wifiIncluded: true,
+            linenPickup: false,
+            guestsOut: false,
+            priority: 'normal',
+            lockCode: '789456',
+            wifiNetwork: 'RiversideGuest',
+            wifiPassword: 'Welcome2023!',
+            bedInfo: '2 Queen Beds',
+            bathInfo: '1 Full Bath',
+            permanentInstructions: 'Standard clean',
+            weekSpecificInstructions: 'Extra attention to carpets',
+            linenInstructions: 'N/A',
+            parkingSpace: 'Space #B-5',
+            parkingInstructions: 'Park in visitor lot',
+            date: today,
+            status: 'assigned'
+        },
+        {
+            id: 3,
+            location: 'City Center Lodge',
+            address: '789 City Ave, Ocean City, MD 21844',
+            room: '108',
+            roomType: 'Presidential Suite',
+            startTime: '14:30',
+            dueTime: '17:00',
+            predictedTime: '2h 30m',
+            guestCount: 4,
+            dogCount: 0,
+            wifiIncluded: true,
+            linenPickup: true,
+            guestsOut: true,
+            priority: 'high',
+            lockCode: '112233',
+            wifiNetwork: 'CityCenterVIP',
+            wifiPassword: 'Luxury@2023',
+            bedInfo: '1 King Bed, 2 Twin Beds',
+            bathInfo: '2 Full Baths',
+            permanentInstructions: 'VIP treatment - white glove service',
+            weekSpecificInstructions: 'Polish all surfaces',
+            linenInstructions: 'Pick up premium linens at front desk',
+            parkingSpace: 'Space #V-1',
+            parkingInstructions: 'VIP parking entrance',
+            date: today,
+            status: 'assigned'
+        }
+    ];
+}
 
 function loadJobsFromLS() {
     try {
         const raw = localStorage.getItem(LS_JOBS_KEY);
         if (!raw) {
-            localStorage.setItem(LS_JOBS_KEY, JSON.stringify(MOCK_JOBS));
-            return JSON.parse(JSON.stringify(MOCK_JOBS));
+            const initialJobs = getInitialJobs();
+            localStorage.setItem(LS_JOBS_KEY, JSON.stringify(initialJobs));
+            return initialJobs;
         }
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+            const initialJobs = getInitialJobs();
+            localStorage.setItem(LS_JOBS_KEY, JSON.stringify(initialJobs));
+            return initialJobs;
+        }
+        return parsed;
     } catch (e) {
         console.error('Error loading jobs', e);
-        return JSON.parse(JSON.stringify(MOCK_JOBS));
+        const initialJobs = getInitialJobs();
+        localStorage.setItem(LS_JOBS_KEY, JSON.stringify(initialJobs));
+        return initialJobs;
     }
 }
 
